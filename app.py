@@ -243,6 +243,45 @@ div[data-testid="stForm"] {
 div[data-testid="stForm"] > div { gap: 0 !important; }
 .stForm { padding: 0 !important; }
 
+/* ── 워터마크 ── */
+.pb-watermark {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    z-index: 0;
+    pointer-events: none;
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.045;
+}
+.pb-watermark-text {
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: clamp(2rem, 6vw, 3.8rem);
+    font-weight: 800;
+    color: #0B2461;
+    letter-spacing: 0.25em;
+    white-space: nowrap;
+    line-height: 1.1;
+}
+.pb-watermark-sub {
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: clamp(0.6rem, 1.8vw, 1rem);
+    font-weight: 500;
+    color: #0B2461;
+    letter-spacing: 0.5em;
+    white-space: nowrap;
+}
+.pb-watermark-line {
+    width: 100%;
+    height: 1.5px;
+    background: #0B2461;
+    margin: 2px 0;
+}
+
 /* TOP 버튼 */
 .top-btn {
     position:fixed; bottom:80px; right:20px;
@@ -270,6 +309,14 @@ div[data-testid="stForm"] > div { gap: 0 !important; }
     .block-container { max-width:680px !important; }
 }
 </style>
+
+<!-- 워터마크 -->
+<div class="pb-watermark" aria-hidden="true">
+  <div class="pb-watermark-text">PARIS</div>
+  <div class="pb-watermark-line"></div>
+  <div class="pb-watermark-text">BAGUETTE</div>
+  <div class="pb-watermark-sub">COMPLIANCE</div>
+</div>
 
 <a class="top-btn" onclick="(window.parent||window).scrollTo({top:0,behavior:'smooth'})" title="맨 위로">↑</a>
 """, unsafe_allow_html=True)

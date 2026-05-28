@@ -318,14 +318,43 @@ if not st.session_state.logged_in:
     else:
         st.info("💡 **일반 사용자** — ID: 사번 입력 / PW: **1111**")
 
+    # 입력칸 너비 제한 CSS
+    st.markdown("""
+    <style>
+    .login-form-narrow { max-width: 260px; }
+    .login-form-narrow .stTextInput input {
+        max-width: 220px !important;
+        font-size: .88rem !important;
+    }
+    .login-form-narrow .stFormSubmitButton > button {
+        max-width: 220px !important;
+        border-radius: 12px !important;
+        height: 44px !important;
+    }
+    .field-label {
+        font-size: .82rem; font-weight: 700;
+        color: #0B2461; margin-bottom: 2px; margin-top: 10px;
+    }
+    </style>
+    <div class="login-form-narrow">
+    """, unsafe_allow_html=True)
+
     with st.form("login_form"):
-        emp_id = st.text_input("ID (사번)", placeholder="사번을 입력하세요")
+        st.markdown('<div class="field-label">ID (사번)</div>', unsafe_allow_html=True)
+        emp_id = st.text_input("ID", placeholder="사번 입력",
+                               label_visibility="collapsed")
+        st.markdown(
+            '<div class="field-label">PW (관리자 비밀번호)</div>' if is_admin_mode
+            else '<div class="field-label">PW (1111)</div>',
+            unsafe_allow_html=True)
         password = st.text_input(
-            "PW (비밀번호)", type="password",
-            placeholder="관리자 비밀번호 입력" if is_admin_mode else "PW(1111)")
+            "PW", type="password",
+            placeholder="비밀번호 입력" if is_admin_mode else "1111",
+            label_visibility="collapsed")
         submitted = st.form_submit_button(
             "⚙️ 관리자 로그인" if is_admin_mode else "👤 로그인",
-            use_container_width=True)
+            use_container_width=False)
+
         if submitted:
             if is_admin_mode and password == ADMIN_PW:
                 st.session_state.logged_in = True
@@ -338,6 +367,8 @@ if not st.session_state.logged_in:
                 st.rerun()
             else:
                 st.error("ID 또는 비밀번호가 올바르지 않습니다.")
+
+    st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
 
 # ══════════════════════════════════════════════════════════════

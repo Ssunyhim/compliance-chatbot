@@ -543,27 +543,27 @@ if st.session_state.is_typing:
     else:
         timer_text = f"· {elapsed}초 경과 (복잡한 질문이에요)"
 
-    st.markdown('<div class="typing-col-wrap">', unsafe_allow_html=True)
-    col_av, col_bub, col_stop, col_empty = st.columns([0.45, 3.8, 1.4, 4.35])
-    with col_av:
-        st.markdown('<div class="bot-avatar" style="margin-top:2px">🛡️</div>', unsafe_allow_html=True)
-    with col_bub:
-        st.markdown(f"""<div class="typing-bubble">
-          <span class="typing-text">답변 생성 중</span>
-          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          <span class="timer-tag">{timer_text}</span>
-        </div>""", unsafe_allow_html=True)
-    with col_stop:
-        st.markdown('<div class="stop-col">', unsafe_allow_html=True)
-        if st.button("⏹ 중지", key="stop_btn"):
-            st.session_state.is_typing    = False
-            st.session_state._api_started = False
-            st.session_state._api_done    = False
-            st.session_state._stopped     = True
-            if st.session_state.history and st.session_state.history[-1]["role"] == "user":
-                st.session_state.history.pop()
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+    # 타이핑 버블 (아바타 + 버블)
+    st.markdown(f"""
+    <div class="bot-row">
+      <div class="bot-avatar">🛡️</div>
+      <div class="typing-bubble">
+        <span class="typing-text">답변 생성 중</span>
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="timer-tag">{timer_text}</span>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+    # 중지 버튼 - 버블 아래 왼쪽 정렬
+    st.markdown('<div style="margin-left:45px;margin-top:2px;margin-bottom:6px">', unsafe_allow_html=True)
+    if st.button("⏹ 중지", key="stop_btn"):
+        st.session_state.is_typing    = False
+        st.session_state._api_started = False
+        st.session_state._api_done    = False
+        st.session_state._stopped     = True
+        if st.session_state.history and st.session_state.history[-1]["role"] == "user":
+            st.session_state.history.pop()
+        st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
@@ -621,7 +621,31 @@ if question:
     st.rerun()
 
 # 스레딩 API 호출
+AUTO_TIMEOUT = 60  # 60초 초과 시 자동 오류 처리
+
 if st.session_state.is_typing:
+    elapsed_total = time.time() - st.session_state.get("_start_time", time.time())
+
+    # ── 자동 타임아웃 ──
+    if st.session_state._api_started and elapsed_total > AUTO_TIMEOUT:
+        timeout_msg = json.dumps({
+            "summary": f"⏱️ {AUTO_TIMEOUT}초가 지나도 응답이 없어 자동 중단됐습니다.",
+            "items": [
+                {"icon": "🔄", "title": "잠시 후 다시 질문해 주세요", "desc": "API 과부하 또는 네트워크 지연일 수 있습니다"},
+                {"icon": "✂️", "title": "질문을 더 짧게 해보세요", "desc": "긴 질문은 응답 시간이 더 걸릴 수 있습니다"}
+            ],
+            "source": None
+        }, ensure_ascii=False)
+        resp_time = elapsed_total
+        if st.session_state.history and st.session_state.history[-1]["role"] == "user":
+            log_audit(st.session_state.history[-1]["content"], resp_time)
+        st.session_state.history.append({"role": "bot", "content": timeout_msg})
+        st.session_state.is_typing    = False
+        st.session_state._api_started = False
+        st.session_state._api_done    = False
+        st.session_state._api_result  = None
+        st.rerun()
+
     if not st.session_state._api_started:
         last_q = next((m["content"] for m in reversed(st.session_state.history) if m["role"]=="user"), None)
         if last_q:

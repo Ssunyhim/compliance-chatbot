@@ -55,11 +55,27 @@ section[data-testid="stMain"]>div{padding:0!important}
 .card-source{margin-top:9px;padding-top:7px;border-top:1px solid #D4E3F7;font-size:.73rem;color:#0D3188;font-weight:600}
 
 /* 피드백 버튼 */
-.feedback-row{display:flex;align-items:center;gap:6px;margin-top:6px;margin-left:45px}
+.feedback-row{display:flex;align-items:center;gap:4px;margin-top:4px;margin-left:45px}
 .feedback-label{font-size:.68rem;color:#A0AABF}
-.stButton.fb-btn>button{background:transparent!important;border:1px solid #D4E3F7!important;border-radius:12px!important;padding:2px 8px!important;font-size:.78rem!important;color:#4A6899!important;min-width:0!important;height:auto!important;margin:0!important}
-.stButton.fb-btn>button:hover{border-color:#0D3188!important;color:#0D3188!important}
-.fb-active{color:#0D3188!important;border-color:#0D3188!important;font-weight:700!important}
+div[data-testid="stButton"].fb-wrap > button,
+.fb-wrap .stButton > button {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 4px !important;
+    font-size: 1.2rem !important;
+    min-width: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    color: inherit !important;
+    border-radius: 0 !important;
+}
+.fb-wrap .stButton > button:hover {
+    background: transparent !important;
+    transform: scale(1.2) !important;
+    transition: transform 0.1s !important;
+}
 
 /* 타이핑 */
 .typing-bubble{background:white;border-radius:4px 14px 14px 14px;padding:10px 15px;border:1px solid #D4E3F7;box-shadow:0 1px 4px rgba(0,0,0,.06);display:inline-flex;align-items:center;gap:5px;white-space:nowrap;width:fit-content}
@@ -518,17 +534,21 @@ for i, msg in enumerate(st.session_state.history):
         # 피드백 버튼
         fb = st.session_state.feedback.get(i)
         st.markdown('<div class="feedback-row"><span class="feedback-label">도움이 됐나요?</span>', unsafe_allow_html=True)
-        fc1, fc2, _ = st.columns([0.4, 0.4, 8])
+        fc1, fc2, _ = st.columns([0.3, 0.3, 9])
         with fc1:
+            st.markdown('<div class="fb-wrap">', unsafe_allow_html=True)
             liked = fb == "positive"
-            if st.button(f"👍{'✓' if liked else ''}", key=f"like_{i}"):
+            if st.button("👍" if not liked else "👍", key=f"like_{i}"):
                 st.session_state.feedback[i] = "positive"
                 st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
         with fc2:
+            st.markdown('<div class="fb-wrap">', unsafe_allow_html=True)
             disliked = fb == "negative"
-            if st.button(f"👎{'✓' if disliked else ''}", key=f"dislike_{i}"):
+            if st.button("👎" if not disliked else "👎", key=f"dislike_{i}"):
                 st.session_state.feedback[i] = "negative"
                 st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
 # 타이핑 중 + 중지

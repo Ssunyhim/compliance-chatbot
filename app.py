@@ -109,8 +109,12 @@ API_KEY = st.secrets.get("GEMINI_API_KEY", "여기에_API_KEY_입력")
 def load_manual():
     txt_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "manual_text.txt")
     if os.path.exists(txt_path):
-        with open(txt_path, "r", encoding="utf-8") as f:
-            return f.read()
+        try:
+            with open(txt_path, "r", encoding="utf-8") as f:
+                return f.read()
+        except UnicodeDecodeError:
+            with open(txt_path, "r", encoding="cp949") as f:
+                return f.read()
     return ""
 
 @st.cache_resource

@@ -157,7 +157,8 @@ section[data-testid="stMain"] > div     { padding: 0 !important; }
     padding: 7px 15px !important;
     transition: all 0.15s !important;
     font-family: 'Noto Sans KR', sans-serif !important;
-    margin-bottom: 4px !important;
+    margin-bottom: 2px !important;
+    margin-top: 0 !important;
 }
 .stButton > button:hover {
     background: #0D3188 !important;
@@ -203,7 +204,7 @@ section[data-testid="stMain"] > div     { padding: 0 !important; }
 @keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.3;}40%{transform:translateY(-5px);opacity:1;}}
 
 /* 빠른 답변 */
-.quick-reply-area { padding:4px 18px 2px; }
+.quick-reply-area { padding:2px 18px 0px; margin-bottom: -8px; }
 
 /* 입력 영역 */
 .stTextInput input {

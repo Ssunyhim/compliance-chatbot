@@ -302,27 +302,43 @@ div[data-testid="stForm"] > div { gap: 0 !important; }
     white-space: nowrap;
 }
 
-/* ── 중지 버튼 (타이핑 인라인) ── */
+/* ── 타이핑 + 중지 버튼 인라인 ── */
+/* 전체 행 flex 정렬 */
+.typing-col-wrap [data-testid="stHorizontalBlock"] {
+    align-items: center !important;
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+}
+/* 타이핑 버블 - fit-content */
+.typing-bubble {
+    display: inline-flex !important;
+    width: fit-content !important;
+    white-space: nowrap !important;
+    align-items: center !important;
+}
+/* 타이핑 버블 컬럼 - 늘어나지 않게 */
+.typing-col-wrap [data-testid="column"]:nth-child(2) > div {
+    display: flex !important;
+    align-items: center !important;
+}
+/* 중지 버튼 */
+.stop-col > div { display: flex; align-items: center; }
 .stop-col .stButton > button {
     background: transparent !important;
     border: 1.5px solid #dc2626 !important;
     color: #dc2626 !important;
     border-radius: 20px !important;
-    padding: 6px 10px !important;
+    padding: 0 12px !important;
     font-size: 0.74rem !important;
     font-weight: 600 !important;
-    margin-top: 4px !important;
+    height: 38px !important;
+    line-height: 38px !important;
     white-space: nowrap !important;
-    height: 36px !important;
+    margin: 0 !important;
 }
 .stop-col .stButton > button:hover {
     background: #dc2626 !important;
     color: white !important;
-}
-/* 타이핑 row column 세로 정렬 */
-.typing-col-wrap [data-testid="stHorizontalBlock"] {
-    align-items: center !important;
-    gap: 6px !important;
 }
 
 /* TOP 버튼 */
@@ -550,15 +566,16 @@ if st.session_state.is_typing:
         timer_text = f"· {elapsed}초 경과 (복잡한 질문이에요)"
 
     st.markdown('<div class="typing-col-wrap">', unsafe_allow_html=True)
-    col_av, col_bub, col_stop = st.columns([0.45, 4.5, 1.3])
-    with col_av:
-        st.markdown('<div class="bot-avatar" style="margin-top:4px">🛡️</div>', unsafe_allow_html=True)
-    with col_bub:
+    col_left, col_stop = st.columns([8, 1.6])
+    with col_left:
         st.markdown(f"""
-        <div class="typing-bubble">
-          <span class="typing-text">답변 생성 중</span>
-          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          <span class="timer-tag">{timer_text}</span>
+        <div class="typing-wrap">
+          <div class="bot-avatar">🛡️</div>
+          <div class="typing-bubble">
+            <span class="typing-text">답변 생성 중</span>
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span class="timer-tag">{timer_text}</span>
+          </div>
         </div>
         """, unsafe_allow_html=True)
     with col_stop:

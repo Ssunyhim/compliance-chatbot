@@ -28,7 +28,7 @@ div[data-testid="stToolbar"]            { display: none !important; }
 section[data-testid="stMain"]           { padding: 0 !important; }
 section[data-testid="stMain"] > div     { padding: 0 !important; }
 .block-container                        { padding: 0 !important; max-width: 780px !important; }
-.stForm                                 { border: none !important; background: transparent !important; }
+.stForm                                 { border: none !important; }
 
 /* ══════════════════════════════
    헤더 (두 번째 이미지 기준)
@@ -206,11 +206,6 @@ section[data-testid="stMain"] > div     { padding: 0 !important; }
 .quick-reply-area { padding:4px 18px 2px; }
 
 /* 입력 영역 */
-.pb-input-wrap {
-    background:white; border-top:1px solid #C5D5EE;
-    padding:10px 14px;
-    position: sticky; bottom: 0;
-}
 .stTextInput input {
     border-radius:22px !important; border:1.5px solid #C5D5EE !important;
     padding:9px 17px !important; font-size:0.88rem !important;
@@ -234,6 +229,19 @@ section[data-testid="stMain"] > div     { padding: 0 !important; }
     background:linear-gradient(135deg, #071530, #0B2461) !important;
 }
 
+/* 입력 폼 래퍼 - 여백 제거 */
+div[data-testid="stForm"] {
+    background: white !important;
+    border-top: 1px solid #C5D5EE !important;
+    padding: 10px 14px !important;
+    margin: 0 !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 100 !important;
+}
+div[data-testid="stForm"] > div { gap: 0 !important; }
+.stForm { padding: 0 !important; }
+
 /* TOP 버튼 */
 .top-btn {
     position:fixed; bottom:80px; right:20px;
@@ -254,7 +262,6 @@ section[data-testid="stMain"] > div     { padding: 0 !important; }
     .pb-title  { font-size:0.88rem; }
     .pb-chat   { padding:10px 10px 4px; }
     .bot-bubble,.user-bubble { max-width:92%; }
-    .pb-input-wrap { padding:8px 10px; }
     .quick-reply-area { padding:4px 10px 2px; }
     .top-btn { right:12px; bottom:72px; }
 }
@@ -458,7 +465,6 @@ if (bot_replied and not st.session_state.is_typing
     st.markdown('</div>', unsafe_allow_html=True)
 
 # 입력 폼
-st.markdown('<div class="pb-input-wrap">', unsafe_allow_html=True)
 with st.form(key="chat_form", clear_on_submit=True):
     c1,c2 = st.columns([5,1])
     with c1:
@@ -468,8 +474,6 @@ with st.form(key="chat_form", clear_on_submit=True):
     with c2:
         send = st.form_submit_button("전송", use_container_width=True,
                                      disabled=st.session_state.is_typing)
-st.markdown('</div>', unsafe_allow_html=True)
-
 # 전송 처리
 question = None
 if send and user_input.strip():

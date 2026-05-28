@@ -4,9 +4,14 @@
 # ============================================================
 
 import os
+import sys
 import time
 import streamlit as st
 from google import genai
+
+# Streamlit Cloud 한글 인코딩 설정
+os.environ["PYTHONIOENCODING"] = "utf-8"
+os.environ["PYTHONUTF8"] = "1"
 
 # ── 페이지 기본 설정 ──────────────────────────────────────────
 st.set_page_config(

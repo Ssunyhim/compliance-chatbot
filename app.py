@@ -188,13 +188,7 @@ section[data-testid="stMain"] > div     { padding: 0 !important; }
 }
 
 /* 타이핑 */
-.typing-wrap { display:flex; gap:9px; align-items:center; margin-bottom:8px; }
-.typing-bubble {
-    background:white; border-radius:4px 14px 14px 14px;
-    padding:10px 15px; border:1px solid #D4E3F7;
-    box-shadow:0 1px 4px rgba(0,0,0,0.06);
-    display:flex; align-items:center; gap:4px;
-}
+.typing-wrap { display:flex; gap:9px; align-items:center; margin-bottom:6px; }
 .typing-text { font-size:0.79rem; color:#A0AABF; margin-right:4px; }
 .dot {
     width:6px; height:6px; background:#0D3188; border-radius:50%;
@@ -303,42 +297,42 @@ div[data-testid="stForm"] > div { gap: 0 !important; }
 }
 
 /* ── 타이핑 + 중지 버튼 인라인 ── */
-/* 전체 행 flex 정렬 */
-.typing-col-wrap [data-testid="stHorizontalBlock"] {
-    align-items: center !important;
-    gap: 6px !important;
-    flex-wrap: nowrap !important;
-}
-/* 타이핑 버블 - fit-content */
 .typing-bubble {
-    display: inline-flex !important;
-    width: fit-content !important;
-    white-space: nowrap !important;
-    align-items: center !important;
+    background:white;
+    border-radius:4px 14px 14px 14px;
+    padding:10px 15px;
+    border:1px solid #D4E3F7;
+    box-shadow:0 1px 4px rgba(0,0,0,0.06);
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    white-space:nowrap;
+    width:fit-content;
 }
-/* 타이핑 버블 컬럼 - 늘어나지 않게 */
-.typing-col-wrap [data-testid="column"]:nth-child(2) > div {
-    display: flex !important;
-    align-items: center !important;
+/* 중지 버튼 - 버블과 동일한 높이/폰트 */
+.stop-col {
+    display: flex;
+    align-items: center;
+    height: 100%;
 }
-/* 중지 버튼 */
-.stop-col > div { display: flex; align-items: center; }
+.stop-col .stButton { display:flex; align-items:center; }
 .stop-col .stButton > button {
     background: transparent !important;
-    border: 1.5px solid #dc2626 !important;
+    border: 1px solid #D4E3F7 !important;
     color: #dc2626 !important;
-    border-radius: 20px !important;
-    padding: 0 12px !important;
-    font-size: 0.74rem !important;
+    border-radius: 4px 14px 14px 14px !important;
+    padding: 10px 14px !important;
+    font-size: 0.79rem !important;
     font-weight: 600 !important;
-    height: 38px !important;
-    line-height: 38px !important;
     white-space: nowrap !important;
     margin: 0 !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
 }
 .stop-col .stButton > button:hover {
-    background: #dc2626 !important;
-    color: white !important;
+    background: #fff0f0 !important;
+    border-color: #dc2626 !important;
 }
 
 /* TOP 버튼 */
@@ -565,19 +559,16 @@ if st.session_state.is_typing:
     else:
         timer_text = f"· {elapsed}초 경과 (복잡한 질문이에요)"
 
-    st.markdown('<div class="typing-col-wrap">', unsafe_allow_html=True)
-    col_left, col_stop = st.columns([8, 1.6])
-    with col_left:
-        st.markdown(f"""
-        <div class="typing-wrap">
-          <div class="bot-avatar">🛡️</div>
-          <div class="typing-bubble">
-            <span class="typing-text">답변 생성 중</span>
-            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-            <span class="timer-tag">{timer_text}</span>
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
+    # avatar + bubble + stop 버튼을 하나의 columns 행에
+    col_av, col_bub, col_stop, col_empty = st.columns([0.45, 3.8, 1.4, 4.35])
+    with col_av:
+        st.markdown('<div class="bot-avatar" style="margin-top:2px">🛡️</div>', unsafe_allow_html=True)
+    with col_bub:
+        st.markdown(f"""<div class="typing-bubble">
+          <span class="typing-text">답변 생성 중</span>
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="timer-tag">{timer_text}</span>
+        </div>""", unsafe_allow_html=True)
     with col_stop:
         st.markdown('<div class="stop-col">', unsafe_allow_html=True)
         if st.button("⏹ 중지", key="stop_btn"):
@@ -589,7 +580,6 @@ if st.session_state.is_typing:
                 st.session_state.history.pop()
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
 

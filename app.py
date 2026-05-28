@@ -205,7 +205,17 @@ section[data-testid="stMain"] > div     { padding: 0 !important; }
 @keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.3;}40%{transform:translateY(-5px);opacity:1;}}
 
 /* 빠른 답변 */
-.quick-reply-area { padding:2px 18px 0px; margin-bottom: -8px; }
+.quick-reply-area {
+    padding: 2px 0 0;
+    margin-bottom: -8px;
+    display: flex;
+    justify-content: center;
+}
+.quick-reply-area .stButton > button {
+    padding: 6px 10px !important;
+    font-size: 0.76rem !important;
+    margin: 0 2px !important;
+}
 
 /* 입력 영역 */
 .stTextInput input {
@@ -437,7 +447,7 @@ def ask_chatbot(user_question):
                 GEMINI_URL,
                 headers={"Content-Type":"application/json; charset=utf-8"},
                 data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-                timeout=60,
+                timeout=90,
             )
             result = resp.json()
             if "candidates" in result:
@@ -448,9 +458,9 @@ def ask_chatbot(user_question):
             return json.dumps({"summary":f"오류: {err.get('message','알 수 없음')}","items":[],"source":None}, ensure_ascii=False)
         except Exception as e:
             if attempt==2:
-                return json.dumps({"summary":f"오류: {e}","items":[],"source":None}, ensure_ascii=False)
+                return json.dumps({"summary":f"일시적인 오류가 발생했습니다. 잠시 후 다시 질문해 주세요.","items":[{"icon":"🔄","title":"새로고침 후 다시 시도","desc":"네트워크 오류 또는 API 한도 초과일 수 있습니다"}],"source":None}, ensure_ascii=False)
             time.sleep(5)
-    return json.dumps({"summary":"잠시 후 다시 시도해 주세요.","items":[],"source":None}, ensure_ascii=False)
+    return json.dumps({"summary":"응답 시간이 초과되었습니다. 잠시 후 다시 질문해 주세요.","items":[{"icon":"⏱️","title":"잠시 후 재시도","desc":"복잡한 질문의 경우 시간이 더 걸릴 수 있습니다"}],"source":None}, ensure_ascii=False)
 
 # ── 채팅 렌더링 ───────────────────────────────────────────────
 # 봇 응답이 아직 없으면 → 환영 + 빠른 질문 항상 노출 (타이핑 중도 포함)
@@ -534,10 +544,11 @@ st.markdown('</div>', unsafe_allow_html=True)
 if (bot_replied and not st.session_state.is_typing
         and st.session_state.history[-1]["role"]=="bot"):
     st.markdown('<div class="quick-reply-area">', unsafe_allow_html=True)
-    cols = st.columns(len(QUICK_REPLIES))
-    for i,(col,label) in enumerate(zip(cols,QUICK_REPLIES)):
+    # 좌우 여백 columns으로 중앙 정렬
+    _, c1, c2, c3, c4, _ = st.columns([0.3, 1, 1, 1, 1, 0.3])
+    for col, label, i in zip([c1,c2,c3,c4], QUICK_REPLIES, range(4)):
         with col:
-            if st.button(label, key=f"qr_{i}"):
+            if st.button(label, key=f"qr_{i}", use_container_width=True):
                 if "처음으로" in label:
                     st.session_state.history=[]
                     st.rerun()

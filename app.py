@@ -1,314 +1,269 @@
 # ============================================================
-# app.py  ─  컴플라이언스 도우미 (Paris Baguette 브랜드 블루)
+# app.py  ─  컴플라이언스 도우미 (Paris Baguette)
 # 실행: python -m streamlit run app.py
 # ============================================================
 
-import os, sys, time, json, requests, datetime
+import os, time, json, requests, datetime
 import streamlit as st
 
 st.set_page_config(
     page_title="컴플라이언스 도우미",
-    page_icon="⚖️",
+    page_icon="🛡️",
     layout="centered",
 )
 
-# ── 구글 폰트 + 전체 CSS ──────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap');
 
-/* ── 리셋 & 기본 ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── 리셋 ── */
+*, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
 html, body, .stApp { font-family: 'Noto Sans KR', sans-serif !important; }
-.stApp { background: #EEF2FF !important; }
-section[data-testid="stMain"] > div { padding-top: 0 !important; }
-.block-container { padding: 0 !important; max-width: 760px !important; }
-div[data-testid="stStatusWidget"] { display: none !important; }
-.stForm { border: none !important; background: transparent !important; }
 
-/* ── 헤더 ── */
+/* ── Streamlit 기본 UI 정리 ── */
+header[data-testid="stHeader"]          { display: none !important; }
+div[data-testid="stStatusWidget"]       { display: none !important; }
+div[data-testid="stToolbar"]            { display: none !important; }
+.stApp                                  { background: #E8EDF5 !important; }
+section[data-testid="stMain"]           { padding: 0 !important; }
+section[data-testid="stMain"] > div     { padding: 0 !important; }
+.block-container                        { padding: 0 !important; max-width: 780px !important; }
+.stForm                                 { border: none !important; background: transparent !important; }
+
+/* ══════════════════════════════
+   헤더 (두 번째 이미지 기준)
+══════════════════════════════ */
 .pb-header {
-    background: linear-gradient(135deg, #061B4A 0%, #0D3B8E 60%, #1A56C4 100%);
-    padding: 20px 24px 16px 24px;
+    background: linear-gradient(135deg, #071530 0%, #0B2461 60%, #0D3188 100%);
+    padding: 14px 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 3px 16px rgba(6,27,74,0.35);
-    min-height: 80px;
-    overflow: visible;
+    gap: 12px;
 }
-.pb-header-left {
+.pb-header-inner {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
-    overflow: visible;
+    align-items: center;
+    gap: 11px;
+    flex: 1;
+    min-width: 0;
 }
-.pb-header-title {
+.pb-icon-box {
+    width: 38px; height: 38px; min-width: 38px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.15rem;
+}
+.pb-header-texts { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pb-title {
     color: white;
-    font-size: clamp(1rem, 3vw, 1.25rem);
+    font-size: clamp(0.9rem, 2.5vw, 1.08rem);
     font-weight: 800;
-    letter-spacing: -0.5px;
-    line-height: 1.3;
+    letter-spacing: -0.3px;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
-.pb-header-sub {
-    color: rgba(255,255,255,0.72);
-    font-size: 0.72rem;
+.pb-sub {
+    color: rgba(255,255,255,0.60);
+    font-size: 0.68rem;
     font-weight: 400;
-    letter-spacing: 0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .pb-online {
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.28);
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.25);
     border-radius: 20px;
-    padding: 5px 12px;
+    padding: 4px 11px;
     color: white;
-    font-size: 0.72rem;
+    font-size: 0.70rem;
     font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     white-space: nowrap;
     flex-shrink: 0;
 }
-.pb-online-dot {
-    width: 7px; height: 7px;
-    background: #4ADE80;
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-}
+.pb-dot { width: 7px; height: 7px; background: #4ADE80; border-radius: 50%; animation: pulse 2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
 
-/* ── 상태 바 ── */
+/* 상태 바 */
 .pb-status {
-    background: #F0F4FF;
-    border-bottom: 1px solid #C7D8F5;
-    padding: 8px 24px;
-    font-size: 0.75rem;
-    color: #3B5EA6;
+    background: #F5F8FF;
+    border-bottom: 1px solid #C5D5EE;
+    padding: 7px 20px;
+    font-size: 0.73rem;
+    color: #2A5298;
     display: flex;
     align-items: center;
     gap: 6px;
     font-weight: 500;
 }
 
-/* ── 채팅 영역 ── */
-.pb-chat {
-    padding: 20px 20px 10px;
-    min-height: 300px;
-}
+/* ══════════════════════════════
+   채팅 영역 (공백 제거)
+══════════════════════════════ */
+.pb-chat { padding: 14px 18px 6px; }
 
-/* ── 봇 메시지 ── */
-.bot-row { display: flex; gap: 10px; margin-bottom: 6px; align-items: flex-start; }
+/* 봇 메시지 */
+.bot-row { display:flex; gap:9px; margin-bottom:6px; align-items:flex-start; }
 .bot-avatar {
-    width: 38px; height: 38px; min-width: 38px;
-    background: linear-gradient(135deg, #061B4A, #0D3B8E);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.05rem;
-    box-shadow: 0 2px 8px rgba(13,59,142,0.3);
+    width:36px; height:36px; min-width:36px;
+    background: linear-gradient(135deg, #071530, #0D3188);
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.95rem;
+    box-shadow:0 2px 8px rgba(13,49,136,0.3);
 }
 .bot-bubble {
-    background: white;
-    border-radius: 4px 16px 16px 16px;
-    padding: 14px 16px;
-    max-width: 82%;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.08);
-    border: 1px solid #DCE8FB;
+    background:white;
+    border-radius:4px 14px 14px 14px;
+    padding:12px 15px;
+    max-width:84%;
+    box-shadow:0 1px 5px rgba(0,0,0,0.07);
+    border:1px solid #D4E3F7;
 }
-.msg-time {
-    font-size: 0.63rem;
-    color: #A0AABF;
-    margin-top: 4px;
-    margin-left: 48px;
-}
-.msg-time-right {
-    font-size: 0.63rem;
-    color: #A0AABF;
-    margin-top: 4px;
-    text-align: right;
-}
+.msg-time      { font-size:0.62rem; color:#A0AABF; margin-top:3px; margin-left:45px; }
+.msg-time-right{ font-size:0.62rem; color:#A0AABF; margin-top:3px; text-align:right; }
 
-/* ── 사용자 메시지 ── */
-.user-row { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+/* 사용자 메시지 */
+.user-row { display:flex; justify-content:flex-end; margin-bottom:6px; }
 .user-bubble {
-    background: linear-gradient(135deg, #0D3B8E, #1A56C4);
-    color: white;
-    border-radius: 16px 4px 16px 16px;
-    padding: 12px 16px;
-    max-width: 72%;
-    font-size: 0.9rem;
-    line-height: 1.55;
-    box-shadow: 0 2px 10px rgba(13,59,142,0.28);
+    background: linear-gradient(135deg, #0B2461, #1A56C4);
+    color:white;
+    border-radius:14px 4px 14px 14px;
+    padding:11px 15px;
+    max-width:72%;
+    font-size:0.88rem;
+    line-height:1.55;
+    box-shadow:0 2px 8px rgba(13,49,136,0.25);
 }
 
-/* ── 환영 텍스트 ── */
-.welcome-text {
-    font-size: 0.9rem;
-    color: #1A2B5F;
-    line-height: 1.65;
-    margin-bottom: 4px;
-}
+/* 환영 */
+.welcome-text { font-size:0.88rem; color:#1A2B5F; line-height:1.65; }
 
-/* ── 빠른 질문 버튼 ── */
-.stButton > button[kind="secondary"],
+/* ── 빠른 질문 버튼 (Streamlit) ── */
 .stButton > button {
-    border-radius: 24px !important;
-    border: 1.5px solid #0D3B8E !important;
+    border-radius: 22px !important;
+    border: 1.5px solid #0D3188 !important;
     background: white !important;
-    color: #0D3B8E !important;
-    font-size: 0.83rem !important;
+    color: #0D3188 !important;
+    font-size: 0.82rem !important;
     font-weight: 600 !important;
-    padding: 8px 16px !important;
+    padding: 7px 15px !important;
     transition: all 0.15s !important;
     font-family: 'Noto Sans KR', sans-serif !important;
+    margin-bottom: 4px !important;
 }
 .stButton > button:hover {
-    background: #0D3B8E !important;
+    background: #0D3188 !important;
     color: white !important;
-    border-color: #0D3B8E !important;
 }
 
-/* ── 카드 응답 ── */
+/* ── 카드형 응답 (불렛) ── */
 .card-summary {
-    font-size: 0.88rem;
-    color: #1A2B5F;
-    line-height: 1.65;
-    margin-bottom: 10px;
-    font-weight: 500;
+    font-size:0.86rem; color:#1A2B5F; line-height:1.6;
+    margin-bottom:9px; font-weight:600;
+    padding-bottom:8px; border-bottom:1px solid #D4E3F7;
 }
 .card-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    background: #F0F4FF;
-    border-radius: 8px;
-    padding: 10px 13px;
-    margin-bottom: 6px;
-    border-left: 3px solid #0D3B8E;
+    display:flex; align-items:flex-start; gap:9px;
+    padding:7px 0;
+    border-bottom: 1px dashed #E8EFF9;
 }
-.ci-icon { font-size: 1rem; min-width: 20px; margin-top: 1px; }
-.ci-title { font-size: 0.84rem; font-weight: 700; color: #061B4A; }
-.ci-desc  { font-size: 0.79rem; color: #4A6899; margin-top: 2px; line-height: 1.45; }
+.card-item:last-of-type { border-bottom: none; }
+.ci-icon { font-size:0.95rem; min-width:20px; margin-top:1px; }
+.ci-title { font-size:0.83rem; font-weight:600; color:#0B2461; line-height:1.45; }
+.ci-desc  { font-size:0.77rem; color:#4A6899; margin-top:2px; line-height:1.4; }
 .card-source {
-    margin-top: 10px;
-    padding-top: 8px;
-    border-top: 1px solid #DCE8FB;
-    font-size: 0.74rem;
-    color: #0D3B8E;
-    font-weight: 600;
+    margin-top:9px; padding-top:7px;
+    border-top:1px solid #D4E3F7;
+    font-size:0.73rem; color:#0D3188; font-weight:600;
 }
 
-/* ── 타이핑 ── */
-.typing-wrap { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+/* 타이핑 */
+.typing-wrap { display:flex; gap:9px; align-items:center; margin-bottom:8px; }
 .typing-bubble {
-    background: white;
-    border-radius: 4px 16px 16px 16px;
-    padding: 11px 16px;
-    border: 1px solid #DCE8FB;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    display: flex; align-items: center; gap: 5px;
+    background:white; border-radius:4px 14px 14px 14px;
+    padding:10px 15px; border:1px solid #D4E3F7;
+    box-shadow:0 1px 4px rgba(0,0,0,0.06);
+    display:flex; align-items:center; gap:4px;
 }
-.typing-text { font-size: 0.8rem; color: #A0AABF; margin-right: 4px; }
+.typing-text { font-size:0.79rem; color:#A0AABF; margin-right:4px; }
 .dot {
-    width: 7px; height: 7px;
-    background: #0D3B8E;
-    border-radius: 50%;
-    display: inline-block;
-    animation: bounce 1.2s infinite ease-in-out;
+    width:6px; height:6px; background:#0D3188; border-radius:50%;
+    display:inline-block; animation:bounce 1.2s infinite ease-in-out;
 }
-.dot:nth-child(2) { animation-delay: 0.2s; }
-.dot:nth-child(3) { animation-delay: 0.4s; }
-@keyframes bounce {
-    0%,80%,100%{transform:translateY(0);opacity:.3;}
-    40%{transform:translateY(-6px);opacity:1;}
-}
+.dot:nth-child(2){animation-delay:0.2s;}
+.dot:nth-child(3){animation-delay:0.4s;}
+@keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.3;}40%{transform:translateY(-5px);opacity:1;}}
 
-/* ── 빠른 답변 버튼 영역 ── */
-.quick-reply-area { padding: 6px 20px 2px; }
+/* 빠른 답변 */
+.quick-reply-area { padding:4px 18px 2px; }
 
-/* ── 입력 영역 ── */
+/* 입력 영역 */
 .pb-input-wrap {
-    background: white;
-    border-top: 1px solid #C7D8F5;
-    padding: 12px 16px;
+    background:white; border-top:1px solid #C5D5EE;
+    padding:10px 14px;
+    position: sticky; bottom: 0;
 }
 .stTextInput input {
-    border-radius: 25px !important;
-    border: 1.5px solid #C7D8F5 !important;
-    padding: 10px 18px !important;
-    font-size: 0.9rem !important;
-    background: #F0F4FF !important;
-    color: #1A2B5F !important;
-    font-family: 'Noto Sans KR', sans-serif !important;
+    border-radius:22px !important; border:1.5px solid #C5D5EE !important;
+    padding:9px 17px !important; font-size:0.88rem !important;
+    background:#F0F5FF !important; color:#1A2B5F !important;
+    font-family:'Noto Sans KR',sans-serif !important;
 }
 .stTextInput input:focus {
-    border-color: #0D3B8E !important;
-    box-shadow: 0 0 0 3px rgba(13,59,142,0.12) !important;
-    outline: none !important;
+    border-color:#0D3188 !important;
+    box-shadow:0 0 0 3px rgba(13,49,136,0.10) !important;
 }
 .stFormSubmitButton > button {
-    border-radius: 25px !important;
-    background: linear-gradient(135deg, #0D3B8E, #1A56C4) !important;
-    color: white !important;
-    border: none !important;
-    padding: 10px 22px !important;
-    font-weight: 700 !important;
-    font-size: 0.88rem !important;
-    height: 46px !important;
-    font-family: 'Noto Sans KR', sans-serif !important;
-    box-shadow: 0 2px 8px rgba(13,59,142,0.3) !important;
+    border-radius:22px !important;
+    background:linear-gradient(135deg, #0B2461, #1A56C4) !important;
+    color:white !important; border:none !important;
+    padding:9px 20px !important; font-weight:700 !important;
+    font-size:0.86rem !important; height:44px !important;
+    font-family:'Noto Sans KR',sans-serif !important;
+    box-shadow:0 2px 8px rgba(13,49,136,0.28) !important;
 }
 .stFormSubmitButton > button:hover {
-    background: linear-gradient(135deg, #061B4A, #0D3B8E) !important;
+    background:linear-gradient(135deg, #071530, #0B2461) !important;
 }
 
-/* ── TOP 버튼 ── */
+/* TOP 버튼 */
 .top-btn {
-    position: fixed;
-    bottom: 90px;
-    right: 24px;
-    width: 42px; height: 42px;
-    background: linear-gradient(135deg, #0D3B8E, #1A56C4);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    box-shadow: 0 3px 12px rgba(13,59,142,0.35);
-    color: white; font-size: 1rem;
-    z-index: 9999;
-    border: none;
-    transition: all 0.2s;
-    text-decoration: none;
+    position:fixed; bottom:80px; right:20px;
+    width:40px; height:40px;
+    background:linear-gradient(135deg, #0B2461, #1A56C4);
+    border-radius:50%; border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    color:white; font-size:1rem; font-weight:700;
+    box-shadow:0 3px 12px rgba(13,49,136,0.35);
+    z-index:9999; transition:all 0.2s; text-decoration:none;
 }
-.top-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 16px rgba(13,59,142,0.45);
-}
+.top-btn:hover { transform:translateY(-2px); box-shadow:0 5px 16px rgba(13,49,136,0.45); }
 
-/* ── 반응형 ── */
-@media (max-width: 640px) {
-    .block-container { max-width: 100% !important; }
-    .pb-header { padding: 14px 16px 12px; min-height: 68px; }
-    .pb-header-title { font-size: 1rem; }
-    .pb-chat { padding: 14px 12px 8px; }
-    .bot-bubble { max-width: 90%; }
-    .user-bubble { max-width: 85%; }
-    .pb-input-wrap { padding: 10px 12px; }
-    .pb-status { padding: 7px 16px; }
-    .quick-reply-area { padding: 6px 12px 2px; }
-    .top-btn { right: 14px; bottom: 80px; }
+/* 반응형 */
+@media(max-width:640px){
+    .block-container { max-width:100% !important; }
+    .pb-header { padding:11px 14px; }
+    .pb-title  { font-size:0.88rem; }
+    .pb-chat   { padding:10px 10px 4px; }
+    .bot-bubble,.user-bubble { max-width:92%; }
+    .pb-input-wrap { padding:8px 10px; }
+    .quick-reply-area { padding:4px 10px 2px; }
+    .top-btn { right:12px; bottom:72px; }
 }
-@media (min-width: 641px) and (max-width: 1024px) {
-    .block-container { max-width: 680px !important; }
+@media(min-width:641px) and (max-width:1024px){
+    .block-container { max-width:680px !important; }
 }
 </style>
 
-<!-- TOP 버튼 -->
-<a class="top-btn" onclick="window.parent.document.querySelector('section.main')
-    ? window.parent.document.querySelector('section.main').scrollTo({top:0,behavior:'smooth'})
-    : window.scrollTo({top:0,behavior:'smooth'})" title="맨 위로">
-  ↑
-</a>
+<a class="top-btn" onclick="(window.parent||window).scrollTo({top:0,behavior:'smooth'})" title="맨 위로">↑</a>
 """, unsafe_allow_html=True)
 
 # ── 설정 ─────────────────────────────────────────────────────
@@ -319,9 +274,9 @@ GEMINI_URL = (
 )
 
 QUICK_QUESTIONS = [
-    ("📋", "공정거래법·가맹사업법 해석",  "공정거래법과 가맹사업법에 대해 설명해줘"),
-    ("⚠️", "위반 시 제재사항 안내",      "위반 시 제재사항에 대해 알려줘"),
-    ("📝", "내부신고 절차 및 CP 교육",   "내부신고 절차와 CP 교육에 대해 알려줘"),
+    ("📋", "공정거래법·가맹사업법 해석",  "공정거래법과 가맹사업법에 대해 핵심만 알려줘"),
+    ("⚠️", "위반 시 제재사항 안내",      "위반 시 제재사항 핵심 내용을 알려줘"),
+    ("📝", "내부신고 절차 및 CP 교육",   "내부신고 절차와 CP 교육 핵심 내용을 알려줘"),
 ]
 QUICK_REPLIES = ["↺ 처음으로", "CP 교육 일정", "내부신고 절차", "관련 법령 보기"]
 
@@ -341,28 +296,28 @@ MANUAL_TEXT  = load_manual()
 MANUAL_CHARS = f"{len(MANUAL_TEXT):,}"
 NOW_STR      = datetime.datetime.now().strftime("%H:%M")
 
-# ── 세션 초기화 ───────────────────────────────────────────────
-for k, v in [("history", []), ("is_typing", False), ("pending", None)]:
+for k, v in [("history",[]),("is_typing",False),("pending",None)]:
     if k not in st.session_state:
         st.session_state[k] = v
 
 # ── 헤더 ─────────────────────────────────────────────────────
 st.markdown(f"""
 <div class="pb-header">
-  <div class="pb-header-left">
-    <div class="pb-header-title">⚖️&nbsp; 컴플라이언스 도우미</div>
-    <div class="pb-header-sub">사내 CP 자료 기반 &nbsp;·&nbsp; 임직원 전용</div>
+  <div class="pb-header-inner">
+    <div class="pb-icon-box">🛡️</div>
+    <div class="pb-header-texts">
+      <div class="pb-title">컴플라이언스 FAQ 도우미</div>
+      <div class="pb-sub">사내 CP 자료 기반 &nbsp;·&nbsp; 임직원 전용</div>
+    </div>
   </div>
-  <div class="pb-online">
-    <span class="pb-online-dot"></span> 온라인
-  </div>
+  <div class="pb-online"><span class="pb-dot"></span> 온라인</div>
 </div>
 <div class="pb-status">
-  ● &nbsp;자료 로드 완료 &nbsp; 총 <strong>&nbsp;{MANUAL_CHARS}자</strong>
+  ✅ &nbsp;FAQ 자료 로드 완료 &nbsp; 총 <strong>&nbsp;{MANUAL_CHARS}자</strong>
 </div>
 """, unsafe_allow_html=True)
 
-# ── 응답 파싱 함수 ────────────────────────────────────────────
+# ── 응답 파싱 ─────────────────────────────────────────────────
 def parse_response(raw):
     clean = raw.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
     try:
@@ -371,23 +326,26 @@ def parse_response(raw):
         if data.get("summary"):
             html += f'<div class="card-summary">{data["summary"]}</div>'
         for item in data.get("items", []):
-            icon  = item.get("icon",  "•")
-            title = item.get("title", "")
-            desc  = item.get("desc",  "")
+            icon  = item.get("icon","▪")
+            title = item.get("title","")
+            desc  = item.get("desc","")
             html += f"""<div class="card-item">
               <span class="ci-icon">{icon}</span>
-              <div>
-                <div class="ci-title">{title}</div>
-                {'<div class="ci-desc">'+desc+'</div>' if desc else ''}
-              </div>
+              <div><div class="ci-title">{title}</div>{'<div class="ci-desc">'+desc+'</div>' if desc else ''}</div>
             </div>"""
         if data.get("source"):
             html += f'<div class="card-source">📄 출처: {data["source"]}</div>'
         return html
     except Exception:
-        return f'<div style="font-size:.9rem;line-height:1.7;color:#1A2B5F">{raw}</div>'
+        # 일반 텍스트 → 줄 단위 불렛 변환
+        lines = [l.strip() for l in raw.strip().splitlines() if l.strip()]
+        html = ""
+        for l in lines:
+            prefix = "▪" if not l.startswith(("•","▪","·","-","*")) else ""
+            html += f'<div class="card-item"><span class="ci-icon">{prefix}</span><div class="ci-title">{l}</div></div>'
+        return html
 
-# ── AI 호출 함수 ──────────────────────────────────────────────
+# ── AI 호출 ───────────────────────────────────────────────────
 def ask_chatbot(user_question):
     history_text = "".join(
         f"{'사용자' if h['role']=='user' else '도우미'}: {h['content']}\n"
@@ -395,48 +353,54 @@ def ask_chatbot(user_question):
     )
     prompt = (
         "당신은 파리바게뜨 컴플라이언스 전문 도우미입니다.\n"
-        "아래 컴플라이언스 자료를 꼼꼼히 읽고 질문에 답변해주세요.\n"
-        "자료에 내용이 있으면 반드시 찾아서 답변하고, 없으면 담당부서 문의를 안내하세요.\n\n"
-        "★ 응답 형식: 반드시 아래 JSON만 출력하세요. 다른 텍스트 절대 포함 금지.\n"
-        '{"summary":"1~2줄 핵심요약","items":[{"icon":"이모지","title":"항목제목","desc":"항목설명"}],"source":"출처명 또는 null"}\n\n'
-        "[컴플라이언스 자료]\n" + MANUAL_TEXT[:200000]
-        + "\n\n[이전 대화]\n" + history_text
+        "아래 컴플라이언스 자료에서 질문과 관련된 핵심 내용만 찾아 답변하세요.\n"
+        "자료에 없으면 '담당 부서에 문의해 주세요'로 안내하세요.\n\n"
+        "★ 응답 규칙:\n"
+        "1. 반드시 아래 JSON 형식으로만 출력 (다른 텍스트 금지)\n"
+        "2. summary: 한 줄 핵심 요약\n"
+        "3. items: 핵심 내용을 간결한 불렛 3~6개로 정리. desc는 꼭 필요할 때만 한 줄로.\n"
+        "4. 서술형 문장 금지. 명사형·단문 위주로 작성.\n"
+        '{"summary":"한줄요약","items":[{"icon":"이모지","title":"핵심항목","desc":"보충설명(선택)"}],"source":"출처명 또는 null"}\n\n'
+        "[자료]\n" + MANUAL_TEXT[:200000]
+        + "\n\n[이전대화]\n" + history_text
         + "\n\n[질문]\n" + user_question
     )
-    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+    payload = {"contents":[{"parts":[{"text":prompt}]}]}
     for attempt in range(3):
         try:
             resp   = requests.post(
                 GEMINI_URL,
-                headers={"Content-Type": "application/json; charset=utf-8"},
+                headers={"Content-Type":"application/json; charset=utf-8"},
                 data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
                 timeout=60,
             )
             result = resp.json()
             if "candidates" in result:
                 return result["candidates"][0]["content"]["parts"][0]["text"]
-            err = result.get("error", {})
-            if err.get("code") == 429:
-                time.sleep((attempt + 1) * 15); continue
-            return json.dumps({"summary": f"오류: {err.get('message','알 수 없음')}", "items": [], "source": None}, ensure_ascii=False)
+            err = result.get("error",{})
+            if err.get("code")==429:
+                time.sleep((attempt+1)*15); continue
+            return json.dumps({"summary":f"오류: {err.get('message','알 수 없음')}","items":[],"source":None}, ensure_ascii=False)
         except Exception as e:
-            if attempt == 2:
-                return json.dumps({"summary": f"오류 발생: {e}", "items": [], "source": None}, ensure_ascii=False)
+            if attempt==2:
+                return json.dumps({"summary":f"오류: {e}","items":[],"source":None}, ensure_ascii=False)
             time.sleep(5)
-    return json.dumps({"summary": "잠시 후 다시 시도해 주세요.", "items": [], "source": None}, ensure_ascii=False)
+    return json.dumps({"summary":"잠시 후 다시 시도해 주세요.","items":[],"source":None}, ensure_ascii=False)
 
 # ── 채팅 렌더링 ───────────────────────────────────────────────
+# 봇 응답이 아직 없으면 → 환영 + 빠른 질문 항상 노출 (타이핑 중도 포함)
+bot_replied = any(m["role"]=="bot" for m in st.session_state.history)
+
 st.markdown('<div class="pb-chat">', unsafe_allow_html=True)
 
-# 환영 메시지
-if not st.session_state.history:
+# 환영 메시지 + 빠른 질문 버튼 (봇이 한 번도 답변 안 했을 때 항상 표시)
+if not bot_replied:
     st.markdown(f"""
     <div class="bot-row">
-      <div class="bot-avatar">⚖️</div>
+      <div class="bot-avatar">🛡️</div>
       <div class="bot-bubble">
         <div class="welcome-text">
-          안녕하세요! 컴플라이언스 도우미입니다.<br>
-          궁금한 점을 질문해 주세요.
+          안녕하세요! 컴플라이언스 도우미입니다.<br>궁금한 점을 질문해 주세요.
         </div>
       </div>
     </div>
@@ -451,17 +415,14 @@ if not st.session_state.history:
 for msg in st.session_state.history:
     if msg["role"] == "user":
         st.markdown(f"""
-        <div class="user-row">
-          <div class="user-bubble">{msg["content"]}</div>
-        </div>
+        <div class="user-row"><div class="user-bubble">{msg["content"]}</div></div>
         <div class="msg-time-right">{NOW_STR}</div>
         """, unsafe_allow_html=True)
     else:
-        card_html = parse_response(msg["content"])
         st.markdown(f"""
         <div class="bot-row">
-          <div class="bot-avatar">⚖️</div>
-          <div class="bot-bubble">{card_html}</div>
+          <div class="bot-avatar">🛡️</div>
+          <div class="bot-bubble">{parse_response(msg["content"])}</div>
         </div>
         <div class="msg-time">{NOW_STR}</div>
         """, unsafe_allow_html=True)
@@ -470,7 +431,7 @@ for msg in st.session_state.history:
 if st.session_state.is_typing:
     st.markdown(f"""
     <div class="typing-wrap">
-      <div class="bot-avatar">⚖️</div>
+      <div class="bot-avatar">🛡️</div>
       <div class="typing-bubble">
         <span class="typing-text">답변 생성 중</span>
         <span class="dot"></span><span class="dot"></span><span class="dot"></span>
@@ -480,43 +441,36 @@ if st.session_state.is_typing:
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ── 빠른 답변 버튼 ───────────────────────────────────────────
-if (st.session_state.history
-        and st.session_state.history[-1]["role"] == "bot"
-        and not st.session_state.is_typing):
+# 빠른 답변 버튼
+if (bot_replied and not st.session_state.is_typing
+        and st.session_state.history[-1]["role"]=="bot"):
     st.markdown('<div class="quick-reply-area">', unsafe_allow_html=True)
     cols = st.columns(len(QUICK_REPLIES))
-    for i, (col, label) in enumerate(zip(cols, QUICK_REPLIES)):
+    for i,(col,label) in enumerate(zip(cols,QUICK_REPLIES)):
         with col:
             if st.button(label, key=f"qr_{i}"):
                 if "처음으로" in label:
-                    st.session_state.history = []
+                    st.session_state.history=[]
                     st.rerun()
                 else:
-                    st.session_state.pending = label
+                    st.session_state.pending=label
                     st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ── 입력 폼 ──────────────────────────────────────────────────
+# 입력 폼
 st.markdown('<div class="pb-input-wrap">', unsafe_allow_html=True)
 with st.form(key="chat_form", clear_on_submit=True):
-    c1, c2 = st.columns([5, 1])
+    c1,c2 = st.columns([5,1])
     with c1:
         user_input = st.text_input(
-            label="질문",
-            placeholder="궁금한 점을 입력하세요...",
-            label_visibility="collapsed",
-            disabled=st.session_state.is_typing,
-        )
+            label="질문", placeholder="궁금한 점을 입력하세요...",
+            label_visibility="collapsed", disabled=st.session_state.is_typing)
     with c2:
-        send = st.form_submit_button(
-            "전송",
-            use_container_width=True,
-            disabled=st.session_state.is_typing,
-        )
+        send = st.form_submit_button("전송", use_container_width=True,
+                                     disabled=st.session_state.is_typing)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ── 전송 처리 ─────────────────────────────────────────────────
+# 전송 처리
 question = None
 if send and user_input.strip():
     question = user_input.strip()
@@ -525,17 +479,13 @@ if st.session_state.pending:
     st.session_state.pending = None
 
 if question:
-    st.session_state.history.append({"role": "user", "content": question})
+    st.session_state.history.append({"role":"user","content":question})
     st.session_state.is_typing = True
     st.rerun()
 
 if st.session_state.is_typing:
-    last_q = next(
-        (m["content"] for m in reversed(st.session_state.history) if m["role"] == "user"),
-        None,
-    )
+    last_q = next((m["content"] for m in reversed(st.session_state.history) if m["role"]=="user"), None)
     if last_q:
-        answer = ask_chatbot(last_q)
-        st.session_state.history.append({"role": "bot", "content": answer})
+        st.session_state.history.append({"role":"bot","content":ask_chatbot(last_q)})
     st.session_state.is_typing = False
     st.rerun()

@@ -5,6 +5,7 @@
 
 import os, time, json, requests, datetime
 import streamlit as st
+import streamlit.components.v1 as components
 
 st.set_page_config(
     page_title="컴플라이언스 도우미",
@@ -282,6 +283,15 @@ div[data-testid="stForm"] > div { gap: 0 !important; }
     margin: 2px 0;
 }
 
+/* ── 실시간 타이머 ── */
+.timer-tag {
+    font-size: 0.72rem;
+    color: #6B8CBF;
+    margin-left: 8px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
 /* TOP 버튼 */
 .top-btn {
     position:fixed; bottom:80px; right:20px;
@@ -482,7 +492,7 @@ for msg in st.session_state.history:
         <div class="msg-time">{NOW_STR}</div>
         """, unsafe_allow_html=True)
 
-# 타이핑 중
+# 타이핑 중 + 실시간 경과 타이머
 if st.session_state.is_typing:
     st.markdown(f"""
     <div class="typing-wrap">
@@ -490,9 +500,33 @@ if st.session_state.is_typing:
       <div class="typing-bubble">
         <span class="typing-text">답변 생성 중</span>
         <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span id="pb-timer" class="timer-tag">· 잠시만 기다려 주세요</span>
       </div>
     </div>
     """, unsafe_allow_html=True)
+    components.html("""
+    <script>
+    var start = Date.now();
+    function updateTimer() {
+        try {
+            var el = window.parent.document.getElementById('pb-timer');
+            if (!el) { setTimeout(updateTimer, 500); return; }
+            var sec = Math.floor((Date.now() - start) / 1000);
+            if (sec < 5) {
+                el.textContent = '· 잠시만 기다려 주세요';
+            } else if (sec < 15) {
+                el.textContent = '· ' + sec + '초 경과';
+            } else if (sec < 30) {
+                el.textContent = '· ' + sec + '초 경과 (거의 완료)';
+            } else {
+                el.textContent = '· ' + sec + '초 경과 (복잡한 질문이에요)';
+            }
+            setTimeout(updateTimer, 1000);
+        } catch(e) { setTimeout(updateTimer, 1000); }
+    }
+    updateTimer();
+    </script>
+    """, height=0)
 
 st.markdown('</div>', unsafe_allow_html=True)
 

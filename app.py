@@ -436,7 +436,7 @@ def ask_chatbot(user_question):
         "3. items: 핵심 내용을 간결한 불렛 3~6개로 정리. desc는 꼭 필요할 때만 한 줄로.\n"
         "4. 서술형 문장 금지. 명사형·단문 위주로 작성.\n"
         '{"summary":"한줄요약","items":[{"icon":"이모지","title":"핵심항목","desc":"보충설명(선택)"}],"source":"출처명 또는 null"}\n\n'
-        "[자료]\n" + MANUAL_TEXT[:200000]
+        "[자료]\n" + MANUAL_TEXT[:50000]
         + "\n\n[이전대화]\n" + history_text
         + "\n\n[질문]\n" + user_question
     )
@@ -452,15 +452,26 @@ def ask_chatbot(user_question):
             result = resp.json()
             if "candidates" in result:
                 return result["candidates"][0]["content"]["parts"][0]["text"]
-            err = result.get("error",{})
-            if err.get("code")==429:
+            err = result.get("error", {})
+            code = err.get("code", "")
+            msg  = err.get("message", "알 수 없음")
+            if code == 429:
                 time.sleep((attempt+1)*15); continue
-            return json.dumps({"summary":f"오류: {err.get('message','알 수 없음')}","items":[],"source":None}, ensure_ascii=False)
-        except Exception as e:
-            if attempt==2:
-                return json.dumps({"summary":f"일시적인 오류가 발생했습니다. 잠시 후 다시 질문해 주세요.","items":[{"icon":"🔄","title":"새로고침 후 다시 시도","desc":"네트워크 오류 또는 API 한도 초과일 수 있습니다"}],"source":None}, ensure_ascii=False)
+            return json.dumps({
+                "summary": f"API 오류 ({code}): {msg}",
+                "items": [{"icon":"⚠️","title":"오류 내용","desc": msg},
+                          {"icon":"🔑","title":"API 키 또는 모델 확인","desc":"Streamlit Secrets의 키가 올바른지 확인해 주세요"}],
+                "source": None
+            }, ensure_ascii=False)
+        except requests.exceptions.Timeout:
+            if attempt == 2:
+                return json.dumps({"summary":"응답 시간 초과 — 질문을 더 짧게 해보세요","items":[{"icon":"⏱️","title":"타임아웃","desc":"90초가 지나도 응답이 없습니다. 질문을 간단하게 줄여 다시 시도해 주세요"}],"source":None}, ensure_ascii=False)
             time.sleep(5)
-    return json.dumps({"summary":"응답 시간이 초과되었습니다. 잠시 후 다시 질문해 주세요.","items":[{"icon":"⏱️","title":"잠시 후 재시도","desc":"복잡한 질문의 경우 시간이 더 걸릴 수 있습니다"}],"source":None}, ensure_ascii=False)
+        except Exception as e:
+            if attempt == 2:
+                return json.dumps({"summary":f"연결 오류: {str(e)}","items":[{"icon":"🔄","title":"잠시 후 재시도","desc":str(e)}],"source":None}, ensure_ascii=False)
+            time.sleep(5)
+    return json.dumps({"summary":"요청 실패 — 잠시 후 다시 시도해 주세요","items":[],"source":None}, ensure_ascii=False)
 
 # ── 채팅 렌더링 ───────────────────────────────────────────────
 # 봇 응답이 아직 없으면 → 환영 + 빠른 질문 항상 노출 (타이핑 중도 포함)

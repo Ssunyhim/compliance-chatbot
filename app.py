@@ -302,21 +302,27 @@ div[data-testid="stForm"] > div { gap: 0 !important; }
     white-space: nowrap;
 }
 
-/* ── 중지 버튼 ── */
-.stop-area { margin: 4px 0 0 45px; }
-.stop-area .stButton > button {
+/* ── 중지 버튼 (타이핑 인라인) ── */
+.stop-col .stButton > button {
     background: transparent !important;
     border: 1.5px solid #dc2626 !important;
     color: #dc2626 !important;
     border-radius: 20px !important;
-    padding: 3px 12px !important;
+    padding: 6px 10px !important;
     font-size: 0.74rem !important;
     font-weight: 600 !important;
-    margin: 0 !important;
+    margin-top: 4px !important;
+    white-space: nowrap !important;
+    height: 36px !important;
 }
-.stop-area .stButton > button:hover {
+.stop-col .stButton > button:hover {
     background: #dc2626 !important;
     color: white !important;
+}
+/* 타이핑 row column 세로 정렬 */
+.typing-col-wrap [data-testid="stHorizontalBlock"] {
+    align-items: center !important;
+    gap: 6px !important;
 }
 
 /* TOP 버튼 */
@@ -543,27 +549,29 @@ if st.session_state.is_typing:
     else:
         timer_text = f"· {elapsed}초 경과 (복잡한 질문이에요)"
 
-    st.markdown(f"""
-    <div class="typing-wrap">
-      <div class="bot-avatar">🛡️</div>
-      <div class="typing-bubble">
-        <span class="typing-text">답변 생성 중</span>
-        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-        <span class="timer-tag">{timer_text}</span>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 중지 버튼
-    st.markdown('<div class="stop-area">', unsafe_allow_html=True)
-    if st.button("⏹ 중지", key="stop_btn"):
-        st.session_state.is_typing   = False
-        st.session_state._api_started = False
-        st.session_state._api_done   = False
-        st.session_state._stopped    = True
-        if st.session_state.history and st.session_state.history[-1]["role"] == "user":
-            st.session_state.history.pop()
-        st.rerun()
+    st.markdown('<div class="typing-col-wrap">', unsafe_allow_html=True)
+    col_av, col_bub, col_stop = st.columns([0.45, 4.5, 1.3])
+    with col_av:
+        st.markdown('<div class="bot-avatar" style="margin-top:4px">🛡️</div>', unsafe_allow_html=True)
+    with col_bub:
+        st.markdown(f"""
+        <div class="typing-bubble">
+          <span class="typing-text">답변 생성 중</span>
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="timer-tag">{timer_text}</span>
+        </div>
+        """, unsafe_allow_html=True)
+    with col_stop:
+        st.markdown('<div class="stop-col">', unsafe_allow_html=True)
+        if st.button("⏹ 중지", key="stop_btn"):
+            st.session_state.is_typing    = False
+            st.session_state._api_started = False
+            st.session_state._api_done    = False
+            st.session_state._stopped     = True
+            if st.session_state.history and st.session_state.history[-1]["role"] == "user":
+                st.session_state.history.pop()
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)

@@ -143,7 +143,7 @@ div[data-testid="stForm"]{background:white!important;border-top:1px solid #C5D5E
 #  설정 & 데이터 로드
 # ══════════════════════════════════════════════════════════════
 API_KEY   = st.secrets.get("GEMINI_API_KEY", "")
-LOGIN_PW  = st.secrets.get("LOGIN_PASSWORD",  "pb2024")
+LOGIN_PW  = st.secrets.get("LOGIN_PASSWORD",  "1111")
 ADMIN_PW  = st.secrets.get("ADMIN_PASSWORD",  "pbadmin2024")
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
 
@@ -194,7 +194,7 @@ for k,v in [("logged_in",False),("is_admin",False),("user_id",""),
             ("history",[]),("is_typing",False),("pending",None),
             ("_api_done",False),("_api_result",None),
             ("_api_started",False),("_stopped",False),("_start_time",0),
-            ("feedback",{}),("audit_log",[])]:
+            ("feedback",{}),("audit_log",[]),("login_mode","user")]:
     if k not in st.session_state:
         st.session_state[k] = v
 
@@ -268,32 +268,76 @@ def log_audit(question, resp_time):
 #  로그인 페이지
 # ══════════════════════════════════════════════════════════════
 if not st.session_state.logged_in:
+    # 로그인 모드 토글 CSS
     st.markdown("""
-    <div class="login-wrap">
-      <div class="login-logo">
-        <div style="font-size:2.5rem">🛡️</div>
-        <h1>컴플라이언스 도우미</h1>
-        <p>사내 CP 자료 기반 · 임직원 전용</p>
+    <style>
+    .login-outer{max-width:440px;margin:60px auto 0}
+    .login-card{background:white;border-radius:20px;padding:36px 32px 28px;box-shadow:0 8px 32px rgba(13,49,136,.13);margin-bottom:0}
+    .login-logo-area{text-align:center;margin-bottom:24px}
+    .login-logo-area h1{font-size:1.25rem;font-weight:800;color:#0B2461;margin-top:10px}
+    .login-logo-area p{font-size:.78rem;color:#6B8CBF;margin-top:3px}
+    .mode-toggle{display:flex;background:#EEF2FF;border-radius:12px;padding:4px;margin-bottom:22px;gap:4px}
+    .mode-btn{flex:1;text-align:center;padding:9px;border-radius:9px;font-size:.83rem;font-weight:600;cursor:pointer;transition:all .2s;color:#6B8CBF}
+    .mode-btn.active{background:white;color:#0B2461;box-shadow:0 2px 8px rgba(13,49,136,.12)}
+    .cred-hint{background:#F0F5FF;border:1px solid #C5D5EE;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:.78rem;color:#3B5EA6}
+    .cred-hint b{color:#0B2461}
+    .login-card .stTextInput input{border-radius:12px!important;border:1.5px solid #C5D5EE!important;background:#F5F8FF!important;height:46px!important}
+    .login-card .stFormSubmitButton>button{width:100%;border-radius:12px!important;height:48px!important;font-size:.95rem!important}
+    </style>
+    <div class="login-outer">
+      <div class="login-card">
+        <div class="login-logo-area">
+          <div style="font-size:2.5rem">🛡️</div>
+          <h1>컴플라이언스 도우미</h1>
+          <p>사내 CP 자료 기반 &nbsp;·&nbsp; 임직원 전용</p>
+        </div>
       </div>
     </div>
     """, unsafe_allow_html=True)
 
+    # 모드 선택 버튼
+    col_u, col_a = st.columns(2)
+    with col_u:
+        if st.button("👤 일반 사용자", use_container_width=True,
+                     type="primary" if st.session_state.login_mode=="user" else "secondary",
+                     key="mode_user"):
+            st.session_state.login_mode = "user"
+            st.rerun()
+    with col_a:
+        if st.button("⚙️ 관리자", use_container_width=True,
+                     type="primary" if st.session_state.login_mode=="admin" else "secondary",
+                     key="mode_admin"):
+            st.session_state.login_mode = "admin"
+            st.rerun()
+
+    is_admin_mode = st.session_state.login_mode == "admin"
+
+    # 로그인 안내
+    if is_admin_mode:
+        st.info("🔐 **관리자 전용** — 통계 · 문서 관리 · 감사 로그에 접근할 수 있습니다.")
+    else:
+        st.info("💡 **일반 사용자** — ID: 사번 입력 / PW: **1111**")
+
     with st.form("login_form"):
-        emp_id = st.text_input("사번", placeholder="사번을 입력하세요")
-        password = st.text_input("비밀번호", type="password", placeholder="비밀번호를 입력하세요")
-        submitted = st.form_submit_button("로그인", use_container_width=True)
+        emp_id = st.text_input("ID (사번)", placeholder="사번을 입력하세요")
+        password = st.text_input(
+            "PW (비밀번호)", type="password",
+            placeholder="관리자 비밀번호 입력" if is_admin_mode else "PW(1111)")
+        submitted = st.form_submit_button(
+            "⚙️ 관리자 로그인" if is_admin_mode else "👤 로그인",
+            use_container_width=True)
         if submitted:
-            if password == ADMIN_PW:
+            if is_admin_mode and password == ADMIN_PW:
                 st.session_state.logged_in = True
                 st.session_state.is_admin  = True
                 st.session_state.user_id   = emp_id or "admin"
                 st.rerun()
-            elif password == LOGIN_PW:
+            elif not is_admin_mode and password == LOGIN_PW:
                 st.session_state.logged_in = True
                 st.session_state.user_id   = emp_id or "unknown"
                 st.rerun()
             else:
-                st.error("비밀번호가 올바르지 않습니다.")
+                st.error("ID 또는 비밀번호가 올바르지 않습니다.")
     st.stop()
 
 # ══════════════════════════════════════════════════════════════

@@ -345,7 +345,7 @@ div[data-testid="stForm"] > div { gap: 0 !important; }
 API_KEY    = st.secrets.get("GEMINI_API_KEY", "여기에_API_KEY_입력")
 GEMINI_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models/"
-    "gemini-2.5-flash:generateContent?key=" + API_KEY
+    "gemini-2.0-flash:generateContent?key=" + API_KEY
 )
 
 QUICK_QUESTIONS = [

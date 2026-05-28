@@ -3,7 +3,7 @@
 # 실행: python -m streamlit run app.py
 # ============================================================
 
-import os, time, json, requests, datetime
+import os, time, json, requests, datetime, threading
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -302,6 +302,23 @@ div[data-testid="stForm"] > div { gap: 0 !important; }
     white-space: nowrap;
 }
 
+/* ── 중지 버튼 ── */
+.stop-area { margin: 4px 0 0 45px; }
+.stop-area .stButton > button {
+    background: transparent !important;
+    border: 1.5px solid #dc2626 !important;
+    color: #dc2626 !important;
+    border-radius: 20px !important;
+    padding: 3px 12px !important;
+    font-size: 0.74rem !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+}
+.stop-area .stButton > button:hover {
+    background: #dc2626 !important;
+    color: white !important;
+}
+
 /* TOP 버튼 */
 .top-btn {
     position:fixed; bottom:80px; right:20px;
@@ -345,7 +362,7 @@ div[data-testid="stForm"] > div { gap: 0 !important; }
 API_KEY    = st.secrets.get("GEMINI_API_KEY", "여기에_API_KEY_입력")
 GEMINI_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models/"
-    "gemini-2.0-flash:generateContent?key=" + API_KEY
+    "gemini-1.5-flash:generateContent?key=" + API_KEY
 )
 
 QUICK_QUESTIONS = [
@@ -371,7 +388,8 @@ MANUAL_TEXT  = load_manual()
 MANUAL_CHARS = f"{len(MANUAL_TEXT):,}"
 NOW_STR      = datetime.datetime.now().strftime("%H:%M")
 
-for k, v in [("history",[]),("is_typing",False),("pending",None)]:
+for k, v in [("history",[]),("is_typing",False),("pending",None),
+              ("_api_done",False),("_api_result",None),("_api_started",False),("_stopped",False)]:
     if k not in st.session_state:
         st.session_state[k] = v
 
@@ -513,41 +531,40 @@ for msg in st.session_state.history:
         <div class="msg-time">{NOW_STR}</div>
         """, unsafe_allow_html=True)
 
-# 타이핑 중 + 실시간 경과 타이머
+# 타이핑 중 + 실시간 경과 타이머 + 중지 버튼
 if st.session_state.is_typing:
+    elapsed = int(time.time() - st.session_state.get("_start_time", time.time()))
+    if elapsed < 5:
+        timer_text = "· 잠시만 기다려 주세요"
+    elif elapsed < 20:
+        timer_text = f"· {elapsed}초 경과"
+    elif elapsed < 40:
+        timer_text = f"· {elapsed}초 경과 (거의 완료)"
+    else:
+        timer_text = f"· {elapsed}초 경과 (복잡한 질문이에요)"
+
     st.markdown(f"""
     <div class="typing-wrap">
       <div class="bot-avatar">🛡️</div>
       <div class="typing-bubble">
         <span class="typing-text">답변 생성 중</span>
         <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-        <span id="pb-timer" class="timer-tag">· 잠시만 기다려 주세요</span>
+        <span class="timer-tag">{timer_text}</span>
       </div>
     </div>
     """, unsafe_allow_html=True)
-    components.html("""
-    <script>
-    var start = Date.now();
-    function updateTimer() {
-        try {
-            var el = window.parent.document.getElementById('pb-timer');
-            if (!el) { setTimeout(updateTimer, 500); return; }
-            var sec = Math.floor((Date.now() - start) / 1000);
-            if (sec < 5) {
-                el.textContent = '· 잠시만 기다려 주세요';
-            } else if (sec < 15) {
-                el.textContent = '· ' + sec + '초 경과';
-            } else if (sec < 30) {
-                el.textContent = '· ' + sec + '초 경과 (거의 완료)';
-            } else {
-                el.textContent = '· ' + sec + '초 경과 (복잡한 질문이에요)';
-            }
-            setTimeout(updateTimer, 1000);
-        } catch(e) { setTimeout(updateTimer, 1000); }
-    }
-    updateTimer();
-    </script>
-    """, height=0)
+
+    # 중지 버튼
+    st.markdown('<div class="stop-area">', unsafe_allow_html=True)
+    if st.button("⏹ 중지", key="stop_btn"):
+        st.session_state.is_typing   = False
+        st.session_state._api_started = False
+        st.session_state._api_done   = False
+        st.session_state._stopped    = True
+        if st.session_state.history and st.session_state.history[-1]["role"] == "user":
+            st.session_state.history.pop()
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -592,8 +609,25 @@ if question:
     st.rerun()
 
 if st.session_state.is_typing:
-    last_q = next((m["content"] for m in reversed(st.session_state.history) if m["role"]=="user"), None)
-    if last_q:
-        st.session_state.history.append({"role":"bot","content":ask_chatbot(last_q)})
-    st.session_state.is_typing = False
-    st.rerun()
+    if not st.session_state._api_started:
+        last_q = next((m["content"] for m in reversed(st.session_state.history) if m["role"]=="user"), None)
+        if last_q:
+            st.session_state._api_started = True
+            st.session_state._start_time  = time.time()
+            def _worker(q=last_q):
+                result = ask_chatbot(q)
+                st.session_state["_api_result"] = result
+                st.session_state["_api_done"]   = True
+            threading.Thread(target=_worker, daemon=True).start()
+
+    if st.session_state._api_done:
+        if st.session_state.is_typing:
+            st.session_state.history.append({"role":"bot","content":st.session_state._api_result})
+        st.session_state.is_typing    = False
+        st.session_state._api_started = False
+        st.session_state._api_done    = False
+        st.session_state._api_result  = None
+        st.rerun()
+    else:
+        time.sleep(0.8)
+        st.rerun()

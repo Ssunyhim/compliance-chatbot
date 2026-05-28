@@ -1,17 +1,28 @@
 # ============================================================
-# app.py  ─  파리바게뜨 컴플라이언스 챗봇 (Streamlit 웹 버전)
+# app.py  ─  컴플라이언스 도우미 (Streamlit 웹 버전)
 # 실행: python -m streamlit run app.py
 # ============================================================
 
-import os
 import sys
+import os
 import time
+
+# ✅ 서버 인코딩 강제 UTF-8 설정 (반드시 최상단에!)
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='ignore')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8', errors='ignore')
+
 import streamlit as st
 from google import genai
 
-# Streamlit Cloud 한글 인코딩 설정
-os.environ["PYTHONIOENCODING"] = "utf-8"
-os.environ["PYTHONUTF8"] = "1"
+def safe_str(text):
+    """모든 문자열을 안전한 UTF-8로 변환"""
+    if text is None:
+        return ""
+    if isinstance(text, bytes):
+        return text.decode('utf-8', errors='ignore')
+    return str(text).encode('utf-8', errors='ignore').decode('utf-8', errors='ignore')
 
 # ── 페이지 기본 설정 ──────────────────────────────────────────
 st.set_page_config(
@@ -57,7 +68,6 @@ st.markdown("""
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
 
-    /* 타이핑 중 말풍선 */
     .msg-typing {
         background: white;
         color: #999;
@@ -118,8 +128,7 @@ def load_manual():
             try:
                 with open(txt_path, "r", encoding=encoding, errors="ignore") as f:
                     text = f.read()
-                text = text.encode("utf-8", errors="ignore").decode("utf-8", errors="ignore")
-                return text
+                return safe_str(text)
             except Exception:
                 continue
     return ""
@@ -140,7 +149,7 @@ if "is_typing" not in st.session_state:
 # ── 헤더 ─────────────────────────────────────────────────────
 st.markdown("""
 <div class="chat-header">
-  <h1>⚖️ 컴플라이언스 도우미</h1>
+  <h1>&#9878;&#65039; 컴플라이언스 도우미</h1>
   <p>컴플라이언스 관련 궁금한 점을 자유롭게 질문해 주세요</p>
 </div>
 """, unsafe_allow_html=True)
@@ -152,10 +161,10 @@ if not MANUAL_TEXT:
 for msg in st.session_state.history:
     if msg["role"] == "user":
         st.markdown('<div class="msg-label msg-label-user">나</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="msg-user">{msg["content"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="msg-user">{safe_str(msg["content"])}</div>', unsafe_allow_html=True)
     else:
         st.markdown('<div class="msg-label msg-label-bot">⚖️ 컴플라이언스 도우미</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="msg-bot">{msg["content"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="msg-bot">{safe_str(msg["content"])}</div>', unsafe_allow_html=True)
 
 # ── 타이핑 중 표시 ────────────────────────────────────────────
 if st.session_state.is_typing:
@@ -171,10 +180,14 @@ if st.session_state.is_typing:
 
 # ── AI 응답 함수 ──────────────────────────────────────────────
 def ask_chatbot(user_question):
+    user_question = safe_str(user_question)
+
     history_text = ""
     for h in st.session_state.history[-8:]:
         role = "사용자" if h["role"] == "user" else "도우미"
-        history_text += f"{role}: {h['content']}\n"
+        history_text += f"{role}: {safe_str(h['content'])}\n"
+
+    manual = safe_str(MANUAL_TEXT)
 
     prompt = (
         "당신은 파리바게뜨 컴플라이언스 전문 도우미입니다.\n"
@@ -183,7 +196,7 @@ def ask_chatbot(user_question):
         "정말로 자료에 없는 경우에만 '해당 내용은 자료에 없습니다. 담당 부서에 문의해 주세요'라고 안내하세요.\n"
         "답변은 항상 한국어로 해주세요.\n\n"
         "[컴플라이언스 자료]\n"
-        + MANUAL_TEXT[:200000]
+        + manual[:200000]
         + "\n\n[이전 대화]\n"
         + history_text
         + "\n\n[질문]\n"
@@ -196,15 +209,16 @@ def ask_chatbot(user_question):
                 model="gemini-2.5-flash",
                 contents=prompt
             )
-            return response.text
+            return safe_str(response.text)
         except Exception as e:
-            if "429" in str(e):
+            err = str(e)
+            if "429" in err:
                 wait = (attempt + 1) * 15
                 time.sleep(wait)
             else:
-                return f"⚠️ 오류가 발생했습니다: {str(e)}"
+                return f"오류가 발생했습니다: {err}"
 
-    return "⚠️ 잠시 후 다시 질문해 주세요."
+    return "잠시 후 다시 질문해 주세요."
 
 # ── 입력 영역 ─────────────────────────────────────────────────
 st.markdown("<br>", unsafe_allow_html=True)
@@ -238,7 +252,6 @@ if send and user_input.strip():
     st.session_state.is_typing = True
     st.rerun()
 
-# 타이핑 상태일 때 AI 응답 생성
 if st.session_state.is_typing:
     last_user_msg = next(
         (m["content"] for m in reversed(st.session_state.history) if m["role"] == "user"),

@@ -36,6 +36,8 @@ section[data-testid="stMain"]>div{padding:0!important}
 
 /* 채팅 */
 .pb-chat{padding:14px 18px 6px}
+.date-badge-wrap{text-align:center;margin:4px 0 14px}
+.date-badge{background:#D9E3F5;color:#5A7AB0;font-size:.7rem;font-weight:600;padding:4px 14px;border-radius:14px}
 .bot-row{display:flex;gap:9px;margin-bottom:6px;align-items:flex-start}
 .bot-avatar{width:36px;height:36px;min-width:36px;background:linear-gradient(135deg,#071530,#0D3188);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.95rem;box-shadow:0 2px 8px rgba(13,49,136,.3)}
 .bot-bubble{background:white;border-radius:4px 14px 14px 14px;padding:12px 15px;max-width:84%;box-shadow:0 1px 5px rgba(0,0,0,.07);border:1px solid #D4E3F7}
@@ -54,26 +56,31 @@ section[data-testid="stMain"]>div{padding:0!important}
 .ci-desc{font-size:.77rem;color:#4A6899;margin-top:2px;line-height:1.4}
 .card-source{margin-top:9px;padding-top:7px;border-top:1px solid #D4E3F7;font-size:.73rem;color:#0D3188;font-weight:600}
 
-/* 피드백 버튼 */
-.feedback-row{display:flex;align-items:center;gap:4px;margin-top:4px;margin-left:45px}
+/* 피드백 버튼 - 테두리 완전 제거, 이모티콘만 */
+.feedback-row{display:flex;align-items:center;gap:2px;margin-top:4px;margin-left:45px}
 .feedback-label{font-size:.68rem;color:#A0AABF}
-div[data-testid="stButton"].fb-wrap > button,
-.fb-wrap .stButton > button {
+.fb-wrap .stButton > button,
+.fb-wrap .stButton > button:focus,
+.fb-wrap .stButton > button:active {
     background: transparent !important;
+    background-color: transparent !important;
     border: none !important;
+    border-width: 0 !important;
     box-shadow: none !important;
-    padding: 0 4px !important;
-    font-size: 1.2rem !important;
+    outline: none !important;
+    padding: 0 3px !important;
+    font-size: 1.15rem !important;
     min-width: 0 !important;
+    width: auto !important;
     height: auto !important;
     margin: 0 !important;
     line-height: 1 !important;
-    color: inherit !important;
     border-radius: 0 !important;
 }
 .fb-wrap .stButton > button:hover {
     background: transparent !important;
-    transform: scale(1.2) !important;
+    border: none !important;
+    transform: scale(1.25) !important;
     transition: transform 0.1s !important;
 }
 
@@ -161,7 +168,7 @@ div[data-testid="stForm"]{background:white!important;border-top:1px solid #C5D5E
 API_KEY   = st.secrets.get("GEMINI_API_KEY", "")
 LOGIN_PW  = st.secrets.get("LOGIN_PASSWORD",  "1111")
 ADMIN_PW  = st.secrets.get("ADMIN_PASSWORD",  "pbadmin2024")
-GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
 
 QUICK_QUESTIONS = [
     ("📋", "공정거래법·가맹사업법 해석",  "공정거래법과 가맹사업법에 대해 알려줘"),
@@ -242,9 +249,13 @@ def ask_chatbot(question):
             if "candidates" in res:
                 return res["candidates"][0]["content"]["parts"][0]["text"]
             err = res.get("error",{})
-            if err.get("code")==429:
-                time.sleep((attempt+1)*15); continue
-            return json.dumps({"summary":f"API 오류: {err.get('message','')}","items":[],"source":None},ensure_ascii=False)
+            code = err.get("code","")
+            msg  = err.get("message","")
+            if code==429:
+                if attempt < 2:
+                    time.sleep((attempt+1)*10); continue
+                return json.dumps({"summary":"⚠️ API 무료 한도를 초과했습니다.","items":[{"icon":"⏳","title":"1~2분 후 다시 시도","desc":"무료 한도는 잠시 후 자동으로 초기화됩니다"},{"icon":"💳","title":"한도가 자주 초과되면","desc":"Google AI Studio에서 유료 결제(Billing) 설정을 권장합니다"}],"source":None},ensure_ascii=False)
+            return json.dumps({"summary":f"API 오류 (코드 {code})","items":[{"icon":"⚠️","title":"오류 내용","desc":str(msg)[:200]}],"source":None},ensure_ascii=False)
         except requests.exceptions.Timeout:
             if attempt==2:
                 return json.dumps({"summary":"응답 시간 초과 — 질문을 짧게 해보세요","items":[],"source":None},ensure_ascii=False)
@@ -334,22 +345,31 @@ if not st.session_state.logged_in:
     else:
         st.info("💡 **일반 사용자** — ID: 사번 입력 / PW: **1111**")
 
-    # 입력칸 너비 제한 CSS
+    # 입력칸 콤팩트 CSS
     st.markdown("""
     <style>
-    .login-form-narrow { max-width: 260px; }
+    .login-form-narrow { max-width: 230px; }
     .login-form-narrow .stTextInput input {
-        max-width: 220px !important;
-        font-size: .88rem !important;
+        max-width: 180px !important;
+        font-size: .85rem !important;
+        height: 38px !important;
+        padding: 6px 12px !important;
+    }
+    .login-form-narrow [data-testid="stForm"] {
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
     }
     .login-form-narrow .stFormSubmitButton > button {
-        max-width: 220px !important;
-        border-radius: 12px !important;
-        height: 44px !important;
+        max-width: 180px !important;
+        border-radius: 10px !important;
+        height: 40px !important;
+        font-size: .85rem !important;
+        padding: 6px 14px !important;
     }
     .field-label {
-        font-size: .82rem; font-weight: 700;
-        color: #0B2461; margin-bottom: 2px; margin-top: 10px;
+        font-size: .8rem; font-weight: 700;
+        color: #0B2461; margin-bottom: 2px; margin-top: 8px;
     }
     </style>
     <div class="login-form-narrow">
@@ -402,6 +422,21 @@ if st.session_state.is_admin:
     </div>
     """, unsafe_allow_html=True)
 
+    # 탭 메뉴 글자색 (안 보이는 문제 해결)
+    st.markdown("""
+    <style>
+    .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p,
+    .stTabs [data-baseweb="tab"] {
+        color: #0B2461 !important;
+        font-weight: 600 !important;
+        font-size: .9rem !important;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #0D3188 !important;
+    }
+    .stTabs [data-baseweb="tab-highlight"] { background-color: #0D3188 !important; }
+    </style>
+    """, unsafe_allow_html=True)
     tab1, tab2, tab3 = st.tabs(["📊 사용 통계", "📁 문서 관리", "📋 감사 로그"])
 
     with tab1:
@@ -496,8 +531,12 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 bot_replied = any(m["role"]=="bot" for m in st.session_state.history)
+TODAY_STR = datetime.datetime.now().strftime("%Y년 %m월 %d일 (%a)")
 
 st.markdown('<div class="pb-chat">', unsafe_allow_html=True)
+
+# 상단 날짜 배지
+st.markdown(f'<div class="date-badge-wrap"><span class="date-badge">{TODAY_STR}</span></div>', unsafe_allow_html=True)
 
 # 환영 + 빠른 질문
 if not bot_replied:
@@ -517,10 +556,11 @@ if not bot_replied:
 
 # 대화 기록
 for i, msg in enumerate(st.session_state.history):
+    msg_time = msg.get("time", NOW_STR)
     if msg["role"] == "user":
         st.markdown(f"""
         <div class="user-row"><div class="user-bubble">{msg["content"]}</div></div>
-        <div class="msg-time-right">{NOW_STR}</div>
+        <div class="msg-time-right">{msg_time}</div>
         """, unsafe_allow_html=True)
     else:
         st.markdown(f"""
@@ -528,7 +568,7 @@ for i, msg in enumerate(st.session_state.history):
           <div class="bot-avatar">🛡️</div>
           <div class="bot-bubble">{parse_response(msg["content"])}</div>
         </div>
-        <div class="msg-time">{NOW_STR}</div>
+        <div class="msg-time">{msg_time}</div>
         """, unsafe_allow_html=True)
 
         # 피드백 버튼
@@ -635,7 +675,7 @@ if st.session_state.pending:
     st.session_state.pending = None
 
 if question:
-    st.session_state.history.append({"role":"user","content":question})
+    st.session_state.history.append({"role":"user","content":question,"time":datetime.datetime.now().strftime("%H:%M")})
     st.session_state.is_typing    = True
     st.session_state._api_started = False
     st.rerun()
@@ -659,7 +699,7 @@ if st.session_state.is_typing:
         resp_time = elapsed_total
         if st.session_state.history and st.session_state.history[-1]["role"] == "user":
             log_audit(st.session_state.history[-1]["content"], resp_time)
-        st.session_state.history.append({"role": "bot", "content": timeout_msg})
+        st.session_state.history.append({"role": "bot", "content": timeout_msg, "time": datetime.datetime.now().strftime("%H:%M")})
         st.session_state.is_typing    = False
         st.session_state._api_started = False
         st.session_state._api_done    = False
@@ -681,7 +721,7 @@ if st.session_state.is_typing:
         if st.session_state.is_typing:
             answer = st.session_state._api_result
             resp_time = time.time() - st.session_state._start_time
-            st.session_state.history.append({"role":"bot","content":answer})
+            st.session_state.history.append({"role":"bot","content":answer,"time":datetime.datetime.now().strftime("%H:%M")})
             log_audit(st.session_state.history[-2]["content"], resp_time)
         st.session_state.is_typing    = False
         st.session_state._api_started = False

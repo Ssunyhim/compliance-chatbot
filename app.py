@@ -56,41 +56,32 @@ section[data-testid="stMain"]>div{padding:0!important}
 .ci-desc{font-size:.77rem;color:#4A6899;margin-top:2px;line-height:1.4}
 .card-source{margin-top:9px;padding-top:7px;border-top:1px solid #D4E3F7;font-size:.73rem;color:#0D3188;font-weight:600}
 
-/* 피드백 버튼 - 테두리 완전 제거, 이모티콘만 (key 기반 선택자) */
-.feedback-row{display:flex;align-items:center;gap:2px;margin-top:4px;margin-left:45px}
-.feedback-label{font-size:.68rem;color:#A0AABF}
-/* 좋아요/싫어요 버튼: data-testid의 key로 정확히 타겟팅 */
-.stButton:has(button[kind])>button[data-testid*="like"],
-button[data-testid*="like_"],
-button[data-testid*="dislike_"] {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-/* st.button을 감싼 element-container를 key로 식별 */
-.st-key-feedback-fb .stButton > button,
+/* 피드백 버튼 - 한글 텍스트, 작고 연한 스타일 */
 [class*="st-key-like_"] button,
 [class*="st-key-dislike_"] button {
-    background: transparent !important;
-    background-color: transparent !important;
-    border: none !important;
-    border-width: 0 !important;
+    background: #F0F5FF !important;
+    border: 1px solid #D4E3F7 !important;
+    color: #5A7AB0 !important;
     box-shadow: none !important;
-    outline: none !important;
-    padding: 0 4px !important;
-    font-size: 1.3rem !important;
+    padding: 3px 12px !important;
+    font-size: .74rem !important;
+    font-weight: 600 !important;
     min-width: 0 !important;
     width: auto !important;
     height: auto !important;
     margin: 0 !important;
-    line-height: 1 !important;
-    border-radius: 0 !important;
+    line-height: 1.5 !important;
+    border-radius: 14px !important;
 }
-[class*="st-key-like_"] button:hover,
+[class*="st-key-like_"] button:hover {
+    background: #E3F0FF !important;
+    border-color: #0D3188 !important;
+    color: #0D3188 !important;
+}
 [class*="st-key-dislike_"] button:hover {
-    background: transparent !important;
-    border: none !important;
-    transform: scale(1.25) !important;
+    background: #FFF0F0 !important;
+    border-color: #dc2626 !important;
+    color: #dc2626 !important;
 }
 
 /* 타이핑 */
@@ -580,55 +571,32 @@ for i, msg in enumerate(st.session_state.history):
         <div class="msg-time">{msg_time}</div>
         """, unsafe_allow_html=True)
 
-        # 피드백 버튼
+        # 피드백 버튼 (한글 텍스트)
         fb = st.session_state.feedback.get(i)
-        st.markdown('<div style="margin-left:45px;margin-top:2px"><span style="font-size:.68rem;color:#A0AABF">도움이 됐나요?</span></div>', unsafe_allow_html=True)
-        fc1, fc2, _ = st.columns([0.25, 0.25, 9])
+        st.markdown('<div style="margin-left:45px;margin-top:4px"><span style="font-size:.68rem;color:#A0AABF">도움이 됐나요?</span></div>', unsafe_allow_html=True)
+        fc1, fc2, _ = st.columns([0.9, 0.9, 8])
         with fc1:
-            like_label = "👍✓" if fb == "positive" else "👍"
+            like_label = "✓ 도움돼요" if fb == "positive" else "도움돼요"
             if st.button(like_label, key=f"like_{i}"):
                 st.session_state.feedback[i] = "positive"
                 st.rerun()
         with fc2:
-            dislike_label = "👎✓" if fb == "negative" else "👎"
+            dislike_label = "✓ 아쉬워요" if fb == "negative" else "아쉬워요"
             if st.button(dislike_label, key=f"dislike_{i}"):
                 st.session_state.feedback[i] = "negative"
                 st.rerun()
 
-# 타이핑 중 + 중지
+# 타이핑 중 표시
 if st.session_state.is_typing:
-    elapsed = int(time.time() - st.session_state.get("_start_time", time.time()))
-    if elapsed < 5:
-        timer_text = "· 잠시만 기다려 주세요"
-    elif elapsed < 20:
-        timer_text = f"· {elapsed}초 경과"
-    elif elapsed < 40:
-        timer_text = f"· {elapsed}초 경과 (거의 완료)"
-    else:
-        timer_text = f"· {elapsed}초 경과 (복잡한 질문이에요)"
-
-    # 타이핑 버블 (아바타 + 버블)
-    st.markdown(f"""
+    st.markdown("""
     <div class="bot-row">
       <div class="bot-avatar">🛡️</div>
       <div class="typing-bubble">
         <span class="typing-text">답변 생성 중</span>
         <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-        <span class="timer-tag">{timer_text}</span>
       </div>
     </div>
     """, unsafe_allow_html=True)
-    # 중지 버튼 - 버블 아래 왼쪽 정렬
-    st.markdown('<div style="margin-left:45px;margin-top:2px;margin-bottom:6px">', unsafe_allow_html=True)
-    if st.button("⏹ 중지", key="stop_btn"):
-        st.session_state.is_typing    = False
-        st.session_state._api_started = False
-        st.session_state._api_done    = False
-        st.session_state._stopped     = True
-        if st.session_state.history and st.session_state.history[-1]["role"] == "user":
-            st.session_state.history.pop()
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -680,58 +648,23 @@ if st.session_state.pending:
 
 if question:
     st.session_state.history.append({"role":"user","content":question,"time":datetime.datetime.now().strftime("%H:%M")})
-    st.session_state.is_typing    = True
-    st.session_state._api_started = False
+    st.session_state.is_typing = True
     st.rerun()
 
-# 스레딩 API 호출
-AUTO_TIMEOUT = 60  # 60초 초과 시 자동 오류 처리
-
+# ── API 직접 호출 (스레드 없이) ──
+# 스레드 방식은 Streamlit에서 session_state 전달이 불안정해 답변이 사라지는
+# 문제가 있어, 질문을 받으면 그 자리에서 바로 API를 호출하도록 단순화함.
 if st.session_state.is_typing:
-    elapsed_total = time.time() - st.session_state.get("_start_time", time.time())
-
-    # ── 자동 타임아웃 ──
-    if st.session_state._api_started and elapsed_total > AUTO_TIMEOUT:
-        timeout_msg = json.dumps({
-            "summary": f"⏱️ {AUTO_TIMEOUT}초가 지나도 응답이 없어 자동 중단됐습니다.",
-            "items": [
-                {"icon": "🔄", "title": "잠시 후 다시 질문해 주세요", "desc": "API 과부하 또는 네트워크 지연일 수 있습니다"},
-                {"icon": "✂️", "title": "질문을 더 짧게 해보세요", "desc": "긴 질문은 응답 시간이 더 걸릴 수 있습니다"}
-            ],
-            "source": None
-        }, ensure_ascii=False)
-        resp_time = elapsed_total
-        if st.session_state.history and st.session_state.history[-1]["role"] == "user":
-            log_audit(st.session_state.history[-1]["content"], resp_time)
-        st.session_state.history.append({"role": "bot", "content": timeout_msg, "time": datetime.datetime.now().strftime("%H:%M")})
-        st.session_state.is_typing    = False
-        st.session_state._api_started = False
-        st.session_state._api_done    = False
-        st.session_state._api_result  = None
-        st.rerun()
-
-    if not st.session_state._api_started:
-        last_q = next((m["content"] for m in reversed(st.session_state.history) if m["role"]=="user"), None)
-        if last_q:
-            st.session_state._api_started = True
-            st.session_state._start_time  = time.time()
-            def _worker(q=last_q):
-                result = ask_chatbot(q)
-                st.session_state["_api_result"] = result
-                st.session_state["_api_done"]   = True
-            threading.Thread(target=_worker, daemon=True).start()
-
-    if st.session_state._api_done:
-        if st.session_state.is_typing:
-            answer = st.session_state._api_result
-            resp_time = time.time() - st.session_state._start_time
-            st.session_state.history.append({"role":"bot","content":answer,"time":datetime.datetime.now().strftime("%H:%M")})
-            log_audit(st.session_state.history[-2]["content"], resp_time)
-        st.session_state.is_typing    = False
-        st.session_state._api_started = False
-        st.session_state._api_done    = False
-        st.session_state._api_result  = None
-        st.rerun()
-    else:
-        time.sleep(0.8)
-        st.rerun()
+    last_q = next((m["content"] for m in reversed(st.session_state.history) if m["role"]=="user"), None)
+    if last_q:
+        start = time.time()
+        answer = ask_chatbot(last_q)            # 여기서 동기 호출 (스피너는 이미 위에 표시됨)
+        resp_time = time.time() - start
+        st.session_state.history.append({
+            "role": "bot",
+            "content": answer,
+            "time": datetime.datetime.now().strftime("%H:%M"),
+        })
+        log_audit(last_q, resp_time)
+    st.session_state.is_typing = False
+    st.rerun()

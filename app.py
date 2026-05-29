@@ -56,20 +56,29 @@ section[data-testid="stMain"]>div{padding:0!important}
 .ci-desc{font-size:.77rem;color:#4A6899;margin-top:2px;line-height:1.4}
 .card-source{margin-top:9px;padding-top:7px;border-top:1px solid #D4E3F7;font-size:.73rem;color:#0D3188;font-weight:600}
 
-/* 피드백 버튼 - 테두리 완전 제거, 이모티콘만 */
+/* 피드백 버튼 - 테두리 완전 제거, 이모티콘만 (key 기반 선택자) */
 .feedback-row{display:flex;align-items:center;gap:2px;margin-top:4px;margin-left:45px}
 .feedback-label{font-size:.68rem;color:#A0AABF}
-.fb-wrap .stButton > button,
-.fb-wrap .stButton > button:focus,
-.fb-wrap .stButton > button:active {
+/* 좋아요/싫어요 버튼: data-testid의 key로 정확히 타겟팅 */
+.stButton:has(button[kind])>button[data-testid*="like"],
+button[data-testid*="like_"],
+button[data-testid*="dislike_"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+/* st.button을 감싼 element-container를 key로 식별 */
+.st-key-feedback-fb .stButton > button,
+[class*="st-key-like_"] button,
+[class*="st-key-dislike_"] button {
     background: transparent !important;
     background-color: transparent !important;
     border: none !important;
     border-width: 0 !important;
     box-shadow: none !important;
     outline: none !important;
-    padding: 0 3px !important;
-    font-size: 1.15rem !important;
+    padding: 0 4px !important;
+    font-size: 1.3rem !important;
     min-width: 0 !important;
     width: auto !important;
     height: auto !important;
@@ -77,11 +86,11 @@ section[data-testid="stMain"]>div{padding:0!important}
     line-height: 1 !important;
     border-radius: 0 !important;
 }
-.fb-wrap .stButton > button:hover {
+[class*="st-key-like_"] button:hover,
+[class*="st-key-dislike_"] button:hover {
     background: transparent !important;
     border: none !important;
     transform: scale(1.25) !important;
-    transition: transform 0.1s !important;
 }
 
 /* 타이핑 */
@@ -171,9 +180,9 @@ ADMIN_PW  = st.secrets.get("ADMIN_PASSWORD",  "pbadmin2024")
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
 
 QUICK_QUESTIONS = [
-    ("📋", "공정거래법·가맹사업법 해석",  "공정거래법과 가맹사업법에 대해 알려줘"),
-    ("⚠️", "위반 시 제재사항 안내",      "위반 시 제재사항을 알려줘"),
-    ("📝", "내부신고 절차 및 CP 교육",   "내부신고 절차와 CP 교육을 알려줘"),
+    ("🏢", "가맹금이란?",              "가맹금이 무엇인지 간단히 알려줘"),
+    ("📢", "내부신고는 어떻게 하나요?",  "내부신고는 어떻게 하나요?"),
+    ("🎓", "CP 교육 대상은 누구인가요?", "CP 교육 대상은 누구인가요?"),
 ]
 QUICK_REPLIES = ["↺ 처음으로", "CP 교육 일정", "내부신고 절차", "관련 법령 보기"]
 
@@ -573,23 +582,18 @@ for i, msg in enumerate(st.session_state.history):
 
         # 피드백 버튼
         fb = st.session_state.feedback.get(i)
-        st.markdown('<div class="feedback-row"><span class="feedback-label">도움이 됐나요?</span>', unsafe_allow_html=True)
-        fc1, fc2, _ = st.columns([0.3, 0.3, 9])
+        st.markdown('<div style="margin-left:45px;margin-top:2px"><span style="font-size:.68rem;color:#A0AABF">도움이 됐나요?</span></div>', unsafe_allow_html=True)
+        fc1, fc2, _ = st.columns([0.25, 0.25, 9])
         with fc1:
-            st.markdown('<div class="fb-wrap">', unsafe_allow_html=True)
-            liked = fb == "positive"
-            if st.button("👍" if not liked else "👍", key=f"like_{i}"):
+            like_label = "👍✓" if fb == "positive" else "👍"
+            if st.button(like_label, key=f"like_{i}"):
                 st.session_state.feedback[i] = "positive"
                 st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
         with fc2:
-            st.markdown('<div class="fb-wrap">', unsafe_allow_html=True)
-            disliked = fb == "negative"
-            if st.button("👎" if not disliked else "👎", key=f"dislike_{i}"):
+            dislike_label = "👎✓" if fb == "negative" else "👎"
+            if st.button(dislike_label, key=f"dislike_{i}"):
                 st.session_state.feedback[i] = "negative"
                 st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
 
 # 타이핑 중 + 중지
 if st.session_state.is_typing:

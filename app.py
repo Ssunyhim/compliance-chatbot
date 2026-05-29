@@ -239,32 +239,35 @@ def ask_chatbot(question):
         f"[관련 자료]\n{context}\n\n[이전 대화]\n{hist}\n\n[질문]\n{question}"
     )
     payload = {"contents":[{"parts":[{"text":prompt}]}]}
-    for attempt in range(3):
-        try:
-            r = requests.post(GEMINI_URL,
-                headers={"Content-Type":"application/json; charset=utf-8"},
-                data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-                timeout=90)
-            res = r.json()
-            if "candidates" in res:
-                return res["candidates"][0]["content"]["parts"][0]["text"]
-            err = res.get("error",{})
-            code = err.get("code","")
-            msg  = err.get("message","")
-            if code==429:
-                if attempt < 2:
-                    time.sleep((attempt+1)*10); continue
-                return json.dumps({"summary":"⚠️ API 무료 한도를 초과했습니다.","items":[{"icon":"⏳","title":"1~2분 후 다시 시도","desc":"무료 한도는 잠시 후 자동으로 초기화됩니다"},{"icon":"💳","title":"한도가 자주 초과되면","desc":"Google AI Studio에서 유료 결제(Billing) 설정을 권장합니다"}],"source":None},ensure_ascii=False)
-            return json.dumps({"summary":f"API 오류 (코드 {code})","items":[{"icon":"⚠️","title":"오류 내용","desc":str(msg)[:200]}],"source":None},ensure_ascii=False)
-        except requests.exceptions.Timeout:
-            if attempt==2:
-                return json.dumps({"summary":"응답 시간 초과 — 질문을 짧게 해보세요","items":[],"source":None},ensure_ascii=False)
-            time.sleep(3)
-        except Exception as e:
-            if attempt==2:
-                return json.dumps({"summary":f"오류: {e}","items":[],"source":None},ensure_ascii=False)
-            time.sleep(3)
-    return json.dumps({"summary":"요청 실패 — 잠시 후 재시도해 주세요","items":[],"source":None},ensure_ascii=False)
+    # ── 진단 모드: 구글 원본 오류를 그대로 화면에 표시 ──
+    try:
+        r = requests.post(GEMINI_URL,
+            headers={"Content-Type":"application/json; charset=utf-8"},
+            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+            timeout=90)
+        # 정상 응답
+        res = r.json()
+        if "candidates" in res:
+            return res["candidates"][0]["content"]["parts"][0]["text"]
+        # 오류 응답 — 원본 그대로 노출
+        err  = res.get("error", {})
+        code = err.get("code", "코드없음")
+        stat = err.get("status", "")
+        msg  = err.get("message", "메시지없음")
+        # API 키 앞 6자리만 표시(키 자체는 가림)
+        key_preview = (API_KEY[:6] + "..." + API_KEY[-4:]) if API_KEY else "(비어있음)"
+        return json.dumps({
+            "summary": f"🔧 [진단] HTTP {r.status_code} / code {code} {stat}",
+            "items": [
+                {"icon":"📩","title":"구글 원본 메시지","desc":str(msg)[:400]},
+                {"icon":"🔑","title":"사용 중인 키","desc":f"{key_preview} (길이 {len(API_KEY)}자)"},
+            ],
+            "source": None
+        }, ensure_ascii=False)
+    except requests.exceptions.Timeout:
+        return json.dumps({"summary":"🔧 [진단] 네트워크 타임아웃 (90초 초과)","items":[],"source":None}, ensure_ascii=False)
+    except Exception as e:
+        return json.dumps({"summary":"🔧 [진단] 예외 발생","items":[{"icon":"⚠️","title":"오류 종류","desc":f"{type(e).__name__}: {str(e)[:300]}"}],"source":None}, ensure_ascii=False)
 
 def parse_response(raw):
     clean = raw.strip().lstrip("```json").lstrip("```").rstrip("```").strip()

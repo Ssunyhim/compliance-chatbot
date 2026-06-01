@@ -202,14 +202,17 @@ MANUAL_TEXT, MANUAL_CHUNKS = load_and_chunk()
 MANUAL_CHARS = f"{len(MANUAL_TEXT):,}"
 
 def get_relevant_chunks(query, top_k=10):
-    """RAG: 한국어 n-gram 키워드 매칭"""
+    """RAG: 한국어 n-gram 키워드 매칭 + 점수 낮아도 상위 결과 포함"""
     if not MANUAL_CHUNKS:
         return []
     clean_q = query.replace(" ", "")
     ngrams = {clean_q[i:i+n] for n in [1,2,3,4] for i in range(len(clean_q)-n+1)}
     scored = sorted(((sum(1 for ng in ngrams if ng in c), c) for c in MANUAL_CHUNKS), reverse=True)
+    # 점수 > 0인 것 우선, 없으면 상위 15개 그냥 사용
     result = [c for s,c in scored[:top_k] if s > 0]
-    return result or MANUAL_CHUNKS[:3]
+    if len(result) < 3:
+        result = [c for _,c in scored[:15]]
+    return result
 
 # ══════════════════════════════════════════════════════════════
 #  세션 초기화

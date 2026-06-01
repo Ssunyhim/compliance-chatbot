@@ -477,14 +477,28 @@ if st.session_state.is_admin:
             st.info("아직 사용 데이터가 없습니다.")
 
     with tab2:
-        st.markdown('<div class="admin-card">', unsafe_allow_html=True)
-        st.markdown("**현재 문서 상태**")
-        st.info(f"📄 manual_text.txt — 총 {MANUAL_CHARS}자 ({len(MANUAL_CHUNKS)}개 청크)")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        st.markdown('<div class="admin-card">', unsafe_allow_html=True)
-        st.markdown("**새 문서 업로드**")
-        st.caption("PDF, DOCX, PPTX, XLSX, TXT 파일을 업로드하면 내용을 추출해 미리보기를 제공합니다.")
+        # 현재 문서 상태
+        st.markdown(f"""
+        <div style="background:#F0F5FF;border:1px solid #C5D5EE;border-radius:10px;padding:14px 18px;margin-bottom:14px">
+          <div style="font-size:.8rem;font-weight:700;color:#0B2461;margin-bottom:6px">현재 문서 상태</div>
+          <div style="font-size:.85rem;color:#1A2B5F">📄 manual_text.txt &nbsp;—&nbsp; 총 {MANUAL_CHARS}자 &nbsp;/&nbsp; {len(MANUAL_CHUNKS)}개 청크</div>
+        </div>
+        <div style="background:#F0F5FF;border:1px solid #C5D5EE;border-radius:10px;padding:14px 18px">
+          <div style="font-size:.8rem;font-weight:700;color:#0B2461;margin-bottom:4px">새 문서 업로드</div>
+          <div style="font-size:.78rem;color:#4A6899;margin-bottom:10px">PDF, DOCX, PPTX, XLSX, TXT 파일을 업로드하면 내용을 추출해 미리보기를 제공합니다.</div>
+        </div>
+        """, unsafe_allow_html=True)
+        # 파일 업로더 글자색
+        st.markdown("""
+        <style>
+        [data-testid="stFileUploader"] label p { color: #1A2B5F !important; font-weight:600 !important; }
+        [data-testid="stFileUploader"] section { border: 1.5px dashed #0D3188 !important; background: #F5F8FF !important; }
+        [data-testid="stFileUploader"] section span,
+        [data-testid="stFileUploader"] section p,
+        [data-testid="stFileUploader"] section button span { color: #1A2B5F !important; }
+        [data-testid="stFileUploader"] section small { color: #5A7AB0 !important; }
+        </style>
+        """, unsafe_allow_html=True)
         uploaded = st.file_uploader("문서 파일 선택", accept_multiple_files=True,
                                      type=["pdf","docx","pptx","xlsx","txt"])
         if uploaded:
@@ -500,7 +514,6 @@ if st.session_state.is_admin:
             combined = "\n\n".join(texts)
             st.text_area("추출 결과 미리보기", combined[:3000], height=200)
             st.download_button("📥 manual_text.txt 다운로드 후 GitHub에 업로드", combined, "manual_text.txt")
-        st.markdown("</div>", unsafe_allow_html=True)
 
     with tab3:
         if st.session_state.audit_log:

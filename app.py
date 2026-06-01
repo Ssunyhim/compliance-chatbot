@@ -497,6 +497,25 @@ if st.session_state.is_admin:
         [data-testid="stFileUploader"] section p,
         [data-testid="stFileUploader"] section button span { color: #1A2B5F !important; }
         [data-testid="stFileUploader"] section small { color: #5A7AB0 !important; }
+        /* Upload 버튼 자체 */
+        [data-testid="stFileUploader"] section button {
+            background: #0D3188 !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 8px !important;
+        }
+        [data-testid="stFileUploader"] section button:hover {
+            background: #0B2461 !important;
+        }
+        [data-testid="stFileUploader"] section button span {
+            color: white !important;
+        }
+        /* 200MB per file 안내 텍스트 */
+        [data-testid="stFileUploaderDropzoneInstructions"] span,
+        [data-testid="stFileUploaderDropzoneInstructions"] small,
+        [data-testid="stFileUploaderDropzoneInstructions"] p {
+            color: #1A2B5F !important;
+        }
         </style>
         """, unsafe_allow_html=True)
         uploaded = st.file_uploader("문서 파일 선택", accept_multiple_files=True,

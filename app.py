@@ -2,7 +2,8 @@
 # app.py  ─  컴플라이언스 도우미 v2.0 (Paris Baguette)
 # 새 기능: 로그인, RAG, 피드백, 대화내보내기, 관리자페이지, 감사로그
 # ============================================================
-import os, time, json, requests, datetime, threading, io
+import os, time, json, requests, datetime, threading
+from zoneinfo import ZoneInfo
 import streamlit as st
 
 st.set_page_config(page_title="컴플라이언스 도우미", page_icon="🛡️", layout="centered")
@@ -188,10 +189,10 @@ def load_and_chunk():
                 text = f.read()
             chunks, i = [], 0
             while i < len(text):
-                c = text[i:i+800].strip()
-                if len(c) > 50:
+                c = text[i:i+500].strip()
+                if len(c) > 30:
                     chunks.append(c)
-                i += 650
+                i += 400
             return text, chunks
         except Exception:
             continue
@@ -200,12 +201,12 @@ def load_and_chunk():
 MANUAL_TEXT, MANUAL_CHUNKS = load_and_chunk()
 MANUAL_CHARS = f"{len(MANUAL_TEXT):,}"
 
-def get_relevant_chunks(query, top_k=7):
+def get_relevant_chunks(query, top_k=10):
     """RAG: 한국어 n-gram 키워드 매칭"""
     if not MANUAL_CHUNKS:
         return []
     clean_q = query.replace(" ", "")
-    ngrams = {clean_q[i:i+n] for n in [2,3,4] for i in range(len(clean_q)-n+1)}
+    ngrams = {clean_q[i:i+n] for n in [1,2,3,4] for i in range(len(clean_q)-n+1)}
     scored = sorted(((sum(1 for ng in ngrams if ng in c), c) for c in MANUAL_CHUNKS), reverse=True)
     result = [c for s,c in scored[:top_k] if s > 0]
     return result or MANUAL_CHUNKS[:3]
@@ -288,7 +289,7 @@ def parse_response(raw):
 
 def log_audit(question, resp_time):
     st.session_state.audit_log.append({
-        "시간": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "시간": datetime.datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M:%S"),
         "사번": st.session_state.user_id,
         "질문": question[:80],
         "응답시간(초)": round(resp_time, 1),
@@ -593,7 +594,7 @@ with hcol2:
         st.rerun()
 
 bot_replied = any(m["role"]=="bot" for m in st.session_state.history)
-TODAY_STR = datetime.datetime.now().strftime("%Y년 %m월 %d일 (%a)")
+TODAY_STR = datetime.datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y년 %m월 %d일 (%a)")
 
 st.markdown('<div class="pb-chat">', unsafe_allow_html=True)
 
@@ -634,23 +635,7 @@ for i, msg in enumerate(st.session_state.history):
         """, unsafe_allow_html=True)
 
         # 피드백 버튼 (한글 텍스트)
-        fb = st.session_state.feedback.get(i)
-        st.markdown("""
-        <div style="margin-left:45px;margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:nowrap">
-          <span style="font-size:.68rem;color:#A0AABF;white-space:nowrap">도움이 됐나요?</span>
-        </div>
-        """, unsafe_allow_html=True)
-        fc1, fc2, _ = st.columns([0.85, 0.85, 8.3])
-        with fc1:
-            like_label = "✓ 도움돼요" if fb == "positive" else "도움돼요"
-            if st.button(like_label, key=f"like_{i}"):
-                st.session_state.feedback[i] = "positive"
-                st.rerun()
-        with fc2:
-            dislike_label = "✓ 아쉬워요" if fb == "negative" else "아쉬워요"
-            if st.button(dislike_label, key=f"dislike_{i}"):
-                st.session_state.feedback[i] = "negative"
-                st.rerun()
+
 
 # 타이핑 중 표시
 if st.session_state.is_typing:
@@ -713,7 +698,7 @@ if st.session_state.pending:
     st.session_state.pending = None
 
 if question:
-    st.session_state.history.append({"role":"user","content":question,"time":datetime.datetime.now().strftime("%H:%M")})
+    st.session_state.history.append({"role":"user","content":question,"time":datetime.datetime.now(ZoneInfo("Asia/Seoul")).strftime("%H:%M")})
     st.session_state.is_typing = True
     st.rerun()
 
@@ -729,7 +714,7 @@ if st.session_state.is_typing:
         st.session_state.history.append({
             "role": "bot",
             "content": answer,
-            "time": datetime.datetime.now().strftime("%H:%M"),
+            "time": datetime.datetime.now(ZoneInfo("Asia/Seoul")).strftime("%H:%M"),
         })
         log_audit(last_q, resp_time)
     st.session_state.is_typing = False

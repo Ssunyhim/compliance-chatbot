@@ -491,29 +491,40 @@ if st.session_state.is_admin:
         # 파일 업로더 글자색
         st.markdown("""
         <style>
+        /* 파일 업로더 전체 */
+        [data-testid="stFileUploader"] { background: transparent !important; }
         [data-testid="stFileUploader"] label p { color: #1A2B5F !important; font-weight:600 !important; }
-        [data-testid="stFileUploader"] section { border: 1.5px dashed #0D3188 !important; background: #F5F8FF !important; }
-        [data-testid="stFileUploader"] section span,
-        [data-testid="stFileUploader"] section p,
-        [data-testid="stFileUploader"] section button span { color: #1A2B5F !important; }
-        [data-testid="stFileUploader"] section small { color: #5A7AB0 !important; }
-        /* Upload 버튼 자체 */
-        [data-testid="stFileUploader"] section button {
-            background: #0D3188 !important;
-            color: white !important;
-            border: none !important;
+        [data-testid="stFileUploader"] section {
+            border: 1.5px dashed #0D3188 !important;
+            background: #EEF2FF !important;
+        }
+        /* Upload 버튼 - 흰 배경 + 파란 글자 */
+        [data-testid="stFileUploader"] section button,
+        [data-testid="stFileUploader"] section > button {
+            background-color: white !important;
+            background: white !important;
+            color: #0D3188 !important;
+            border: 1.5px solid #0D3188 !important;
             border-radius: 8px !important;
+            font-weight: 700 !important;
         }
-        [data-testid="stFileUploader"] section button:hover {
-            background: #0B2461 !important;
+        [data-testid="stFileUploader"] section button *,
+        [data-testid="stFileUploader"] section button span,
+        [data-testid="stFileUploader"] section button p,
+        [data-testid="stFileUploader"] section button div {
+            color: #0D3188 !important;
+            fill: #0D3188 !important;
         }
-        [data-testid="stFileUploader"] section button span {
-            color: white !important;
+        [data-testid="stFileUploader"] section button svg {
+            fill: #0D3188 !important;
+            stroke: #0D3188 !important;
         }
-        /* 200MB per file 안내 텍스트 */
-        [data-testid="stFileUploaderDropzoneInstructions"] span,
-        [data-testid="stFileUploaderDropzoneInstructions"] small,
-        [data-testid="stFileUploaderDropzoneInstructions"] p {
+        /* 안내 텍스트 */
+        [data-testid="stFileUploaderDropzoneInstructions"],
+        [data-testid="stFileUploaderDropzoneInstructions"] *,
+        [data-testid="stFileUploaderDropzone"] span,
+        [data-testid="stFileUploaderDropzone"] small,
+        [data-testid="stFileUploaderDropzone"] p {
             color: #1A2B5F !important;
         }
         </style>

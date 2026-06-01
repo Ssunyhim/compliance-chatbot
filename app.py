@@ -172,9 +172,9 @@ ADMIN_PW  = st.secrets.get("ADMIN_PASSWORD",  "pbadmin2024")
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
 
 QUICK_QUESTIONS = [
-    ("🏢", "가맹금이란?",              "가맹금이 무엇인지 간단히 알려줘"),
-    ("📢", "내부신고는 어떻게 하나요?",  "내부신고는 어떻게 하나요?"),
-    ("🎓", "CP 교육 대상은 누구인가요?", "CP 교육 대상은 누구인가요?"),
+    ("🏢", "가맹금이란?",              "가맹금이 무엇인지 알려줘"),
+    ("⚖️", "공정거래법 위반 시 제재는?", "공정거래법 위반 시 제재사항을 알려줘"),
+    ("📋", "CP란 무엇인가요?",          "컴플라이언스 프로그램(CP)이 무엇인지 알려줘"),
 ]
 QUICK_REPLIES = ["↺ 처음으로", "CP 교육 일정", "내부신고 절차", "관련 법령 보기"]
 

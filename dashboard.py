@@ -111,10 +111,7 @@ div[data-testid="column"] .stButton button {
 #  사이드바 - 데이터 설정
 # ══════════════════════════════════════════════════════════════
 with st.sidebar:
-    if not st.session_state.get("sidebar_open", True):
-        st.markdown("*(설정 버튼으로 열기)*")
-        st.stop()
-    st.markdown("## ⚙️ 데이터 설정")
+    st.markdown('## ⚙️ 데이터 설정')
     st.markdown("---")
 
     # ── 구글 시트 설정 ──
@@ -310,9 +307,7 @@ kpi_pct = int(kpi_actual / kpi_goal * 100) if kpi_goal else 0
 # ══════════════════════════════════════════════════════════════
 #  헤더
 # ══════════════════════════════════════════════════════════════
-# 사이드바 토글 상태
-if "sidebar_open" not in st.session_state:
-    st.session_state.sidebar_open = True
+# 사이드바 설정
 
 col_h1, col_h2 = st.columns([10, 1])
 with col_h1:
@@ -325,9 +320,13 @@ with col_h1:
     """, unsafe_allow_html=True)
 with col_h2:
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-    if st.button("⚙️ 설정", use_container_width=True, help="데이터 설정 사이드바 열기/닫기"):
-        st.session_state.sidebar_open = not st.session_state.sidebar_open
-        st.rerun()
+    st.markdown("""
+    <a href='#' onclick='
+        var s=window.parent.document.querySelector("[data-testid=stSidebar]");
+        var btn=window.parent.document.querySelector("[data-testid=collapsedControl]");
+        if(btn)btn.click();
+    ' style='display:block;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:8px 0;text-align:center;color:white;font-size:.8rem;font-weight:600;text-decoration:none;margin-top:4px'>⚙️ 설정</a>
+    """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════
 #  탭

@@ -1,0 +1,10 @@
+streamlit
+google-genai
+pdfplumber
+python-pptx
+openpyxl
+python-docx
+requests
+beautifulsoup4
+pandas
+feedparser

@@ -201,14 +201,28 @@ def load_and_chunk():
 MANUAL_TEXT, MANUAL_CHUNKS = load_and_chunk()
 MANUAL_CHARS = f"{len(MANUAL_TEXT):,}"
 
-def get_relevant_chunks(query, top_k=10):
-    """RAG: 한국어 n-gram 키워드 매칭 + 점수 낮아도 상위 결과 포함"""
+# 약어 확장 사전
+ABBR_MAP = {
+    "CP": "컴플라이언스 프로그램 CP 준법",
+    "cp": "컴플라이언스 프로그램 CP 준법",
+    "공정위": "공정거래위원회",
+    "가맹법": "가맹사업법 가맹거래법",
+    "내부신고": "내부신고 공익신고 신고채널 신고센터",
+    "제재": "제재 처벌 과징금 시정조치 형사고발",
+}
+
+def get_relevant_chunks(query, top_k=12):
+    """RAG: 약어 확장 + n-gram 키워드 매칭"""
     if not MANUAL_CHUNKS:
         return []
-    clean_q = query.replace(" ", "")
+    # 약어 확장
+    expanded = query
+    for abbr, full in ABBR_MAP.items():
+        if abbr in query:
+            expanded += " " + full
+    clean_q = expanded.replace(" ", "")
     ngrams = {clean_q[i:i+n] for n in [1,2,3,4] for i in range(len(clean_q)-n+1)}
     scored = sorted(((sum(1 for ng in ngrams if ng in c), c) for c in MANUAL_CHUNKS), reverse=True)
-    # 점수 > 0인 것 우선, 없으면 상위 15개 그냥 사용
     result = [c for s,c in scored[:top_k] if s > 0]
     if len(result) < 3:
         result = [c for _,c in scored[:15]]

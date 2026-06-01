@@ -1,6 +1,0 @@
-streamlit
-google-genai
-pdfplumber
-python-pptx
-openpyxl
-python-docx

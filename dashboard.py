@@ -115,19 +115,12 @@ div[data-testid="column"] .stButton button {
 #  사이드바 - 데이터 설정
 # ══════════════════════════════════════════════════════════════
 with st.sidebar:
-    if not st.session_state.get("sidebar_open", True):
-        st.markdown("""
-        <div style="text-align:center;padding:20px 10px;color:#A0AEC0">
-          <div style="font-size:1.5rem;margin-bottom:8px">⚙️</div>
-          <div style="font-size:.78rem">헤더의<br><strong>⚙️ 설정</strong> 버튼으로<br>열 수 있어요</div>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown("## ⚙️ 데이터 설정")
-        st.markdown("---")
+    st.markdown("## ⚙️ 데이터 설정")
+    st.caption("KPI 수치 및 구글 시트 URL을 여기서 설정하세요.")
+    st.markdown("---")
 
-        # ── 구글 시트 설정 ──
-        st.markdown("### 📊 구글 시트 연동")
+    # ── 구글 시트 설정 ──
+    st.markdown("### 📊 구글 시트 연동")
     st.caption("구글 시트를 '웹에 게시'(CSV)로 공개 후 URL을 입력하세요.")
 
     gs_cp    = st.text_input("CP 운영현황 시트 URL", placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv")
@@ -332,9 +325,9 @@ with col_h2:
     st.markdown("""
     <style>
     [class*="st-key-sidebar_toggle"] button {
-        background: linear-gradient(135deg,#0D3B8E,#1A56C4) !important;
-        color: white !important;
-        border: none !important;
+        background: transparent !important;
+        color: #0D3B8E !important;
+        border: 2px solid #0D3B8E !important;
         border-radius: 8px !important;
         font-size: .78rem !important;
         font-weight: 700 !important;
@@ -342,14 +335,37 @@ with col_h2:
         width: 100% !important;
     }
     [class*="st-key-sidebar_toggle"] button:hover {
-        background: linear-gradient(135deg,#061B4A,#0D3B8E) !important;
-        color: white !important;
+        background: #EBF4FF !important;
+        color: #0D3B8E !important;
+        border-color: #0D3B8E !important;
     }
     </style>
     """, unsafe_allow_html=True)
-    if st.button("⚙️\n설정", key="sidebar_toggle", use_container_width=True):
-        st.session_state.sidebar_open = not st.session_state.get("sidebar_open", True)
-        st.rerun()
+    # 설정 버튼 - 클릭시 사이드바 강제 열기
+    components.html("""
+    <style>
+    #open-sidebar-btn {
+        background: transparent;
+        border: 2px solid #0D3B8E;
+        border-radius: 8px;
+        color: #0D3B8E;
+        font-size: 13px;
+        font-weight: 700;
+        width: 100%;
+        height: 58px;
+        cursor: pointer;
+        font-family: 'Noto Sans KR', sans-serif;
+        transition: all .15s;
+    }
+    #open-sidebar-btn:hover { background: #EBF4FF; }
+    </style>
+    <button id="open-sidebar-btn" onclick="
+        var btn = window.parent.document.querySelector('[data-testid=collapsedControl]');
+        var sidebar = window.parent.document.querySelector('[data-testid=stSidebar]');
+        var isCollapsed = sidebar && sidebar.getAttribute('aria-expanded') === 'false';
+        if(btn) btn.click();
+    ">⚙️ 설정</button>
+    """, height=68)
 
 # ══════════════════════════════════════════════════════════════
 #  탭
@@ -395,7 +411,7 @@ with tab1:
               <div class="kpi-val">{val}<span>{unit}</span></div>
               <div class="kpi-sub">{sub}</div>
               <div class="kpi-bar"><div class="kpi-fill" style="width:{pct}%;background:{color}"></div></div>
-              <span class="src-badge manual" style="margin-top:8px">✏️ 직접 입력</span>
+              <span class="src-badge manual" style="margin-top:8px" title="좌측 ⚙️ 설정에서 수정">✏️ 직접 입력 (← 설정에서 수정)</span>
             </div>
             """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)

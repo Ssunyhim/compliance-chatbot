@@ -428,16 +428,24 @@ if st.session_state.is_admin:
     # 탭 메뉴 글자색 (안 보이는 문제 해결)
     st.markdown("""
     <style>
-    .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p,
-    .stTabs [data-baseweb="tab"] {
-        color: #0B2461 !important;
-        font-weight: 600 !important;
-        font-size: .9rem !important;
-    }
-    .stTabs [aria-selected="true"] {
-        color: #0D3188 !important;
-    }
+    /* 관리자 탭 글자 */
+    .stTabs [data-baseweb="tab"] { color: #1A2B5F !important; font-weight: 600 !important; font-size:.9rem !important; }
+    .stTabs [aria-selected="true"] { color: #0D3188 !important; }
     .stTabs [data-baseweb="tab-highlight"] { background-color: #0D3188 !important; }
+    /* 관리자 페이지 전체 글자색 */
+    .admin-card p, .admin-card div, .admin-card span,
+    section[data-testid="stMain"] p,
+    section[data-testid="stMain"] label,
+    section[data-testid="stMain"] span { color: #1A2B5F !important; }
+    section[data-testid="stMain"] h1,
+    section[data-testid="stMain"] h2,
+    section[data-testid="stMain"] h3 { color: #0B2461 !important; }
+    /* 문서관리 탭 텍스트 */
+    [data-testid="stMarkdownContainer"] p { color: #1A2B5F !important; }
+    [data-testid="stMarkdownContainer"] strong { color: #0B2461 !important; }
+    .stFileUploader label, .stFileUploader span { color: #1A2B5F !important; }
+    .stTextArea label { color: #1A2B5F !important; }
+    .stInfo { color: #1A2B5F !important; }
     </style>
     """, unsafe_allow_html=True)
     tab1, tab2, tab3 = st.tabs(["📊 사용 통계", "📁 문서 관리", "📋 감사 로그"])
@@ -533,6 +541,14 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# 로그아웃 버튼 (헤더 바로 아래 우측)
+hcol1, hcol2 = st.columns([8, 1.5])
+with hcol2:
+    if st.button("🚪 로그아웃", use_container_width=True, key="top_logout"):
+        st.session_state.logged_in = False
+        st.session_state.history   = []
+        st.rerun()
+
 bot_replied = any(m["role"]=="bot" for m in st.session_state.history)
 TODAY_STR = datetime.datetime.now().strftime("%Y년 %m월 %d일 (%a)")
 
@@ -576,8 +592,12 @@ for i, msg in enumerate(st.session_state.history):
 
         # 피드백 버튼 (한글 텍스트)
         fb = st.session_state.feedback.get(i)
-        st.markdown('<div style="margin-left:45px;margin-top:4px"><span style="font-size:.68rem;color:#A0AABF">도움이 됐나요?</span></div>', unsafe_allow_html=True)
-        fc1, fc2, _ = st.columns([0.9, 0.9, 8])
+        st.markdown("""
+        <div style="margin-left:45px;margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:nowrap">
+          <span style="font-size:.68rem;color:#A0AABF;white-space:nowrap">도움이 됐나요?</span>
+        </div>
+        """, unsafe_allow_html=True)
+        fc1, fc2, _ = st.columns([0.85, 0.85, 8.3])
         with fc1:
             like_label = "✓ 도움돼요" if fb == "positive" else "도움돼요"
             if st.button(like_label, key=f"like_{i}"):

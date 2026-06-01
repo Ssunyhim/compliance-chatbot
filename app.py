@@ -168,7 +168,7 @@ div[data-testid="stForm"]{background:white!important;border-top:1px solid #C5D5E
 API_KEY   = st.secrets.get("GEMINI_API_KEY", "")
 LOGIN_PW  = st.secrets.get("LOGIN_PASSWORD",  "1111")
 ADMIN_PW  = st.secrets.get("ADMIN_PASSWORD",  "pbadmin2024")
-GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
 
 QUICK_QUESTIONS = [
     ("🏢", "가맹금이란?",              "가맹금이 무엇인지 간단히 알려줘"),

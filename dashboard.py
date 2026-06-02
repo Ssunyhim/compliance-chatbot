@@ -11,7 +11,7 @@ st.set_page_config(
     page_title="CP 컴플라이언스 대시보드",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 KST   = ZoneInfo("Asia/Seoul")
 NOW   = datetime.datetime.now(KST)
@@ -20,32 +20,28 @@ TODAY = NOW.strftime("%Y년 %m월 %d일 (%a)")
 # ══════════════════════════════════════════════════════════════
 #  1. 사이드바
 # ══════════════════════════════════════════════════════════════
-with st.sidebar:
-    st.markdown("## ⚙️ 데이터 설정")
-    st.caption("숫자 변경 → Enter 치면 자동 반영")
-    st.divider()
-    st.markdown("### 📋 KPI 직접 입력")
-    kpi_goal   = st.number_input("CP 목표 건수",  value=40,  min_value=1)
-    kpi_actual = st.number_input("CP 실적 건수",  value=19,  min_value=0)
-    kpi_sign   = st.number_input("내부신고 건수", value=12,  min_value=0)
-    kpi_law    = st.number_input("법령검토 누적", value=350, min_value=0)
-    kpi_ftc    = st.number_input("공정거래 검토", value=761, min_value=0)
-    st.divider()
-    st.markdown("### 📊 구글 시트 연동")
-    st.caption("시트 → 파일 → 웹에 게시 → CSV URL")
-    gs_cp   = st.text_input("CP 운영현황",    placeholder="...export?format=csv")
-    gs_sign = st.text_input("내부신고 현황",  placeholder="...export?format=csv")
-    gs_law  = st.text_input("법령검토 건수",  placeholder="...export?format=csv")
-    gs_ftc  = st.text_input("공정거래 법령별",placeholder="...export?format=csv")
-    gs_tl   = st.text_input("타임라인",       placeholder="...export?format=csv")
-    st.divider()
-    st.markdown("### 📰 뉴스 키워드")
-    news_kw  = st.text_input("뉴스 검색어",        value="가맹사업 법령위반")
-    press_kw = st.text_input("공정위/식약처 키워드", value="가맹 공정거래")
-    st.divider()
-    if st.button("🔄 캐시 초기화", use_container_width=True):
-        st.cache_data.clear()
-        st.success("완료!")
+with st.expander("⚙️ 데이터 설정 — 클릭해서 열기", expanded=False):
+    sc1, sc2 = st.columns(2)
+    with sc1:
+      st.markdown("**📋 KPI 직접 입력**")
+      kpi_goal   = st.number_input("CP 목표 건수",  value=40,  min_value=1)
+      kpi_actual = st.number_input("CP 실적 건수",  value=19,  min_value=0)
+      kpi_sign   = st.number_input("내부신고 건수", value=12,  min_value=0)
+      kpi_law    = st.number_input("법령검토 누적", value=350, min_value=0)
+      kpi_ftc    = st.number_input("공정거래 검토", value=761, min_value=0)
+      st.markdown("**📰 뉴스 키워드**")
+      news_kw  = st.text_input("뉴스 검색어",         value="가맹사업 법령위반")
+      press_kw = st.text_input("공정위/식약처 키워드", value="가맹 공정거래")
+      if st.button("🔄 캐시 초기화"):
+          st.cache_data.clear()
+          st.success("완료!")
+    with sc2:
+      st.markdown("**📊 구글 시트 연동** (시트 → 파일 → 웹에 게시 → CSV URL)")
+      gs_cp   = st.text_input("CP 운영현황 URL",    placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv")
+      gs_sign = st.text_input("내부신고 현황 URL",  placeholder="https://docs.google.com/spreadsheets/d/...")
+      gs_law  = st.text_input("법령검토 건수 URL",  placeholder="https://docs.google.com/spreadsheets/d/...")
+      gs_ftc  = st.text_input("공정거래 법령별 URL",placeholder="https://docs.google.com/spreadsheets/d/...")
+      gs_tl   = st.text_input("타임라인 URL",       placeholder="https://docs.google.com/spreadsheets/d/...")
 
 kpi_pct = int(kpi_actual / kpi_goal * 100) if kpi_goal else 0
 

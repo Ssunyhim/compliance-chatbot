@@ -1,6 +1,5 @@
 # ============================================================
 # dashboard.py  ─  CP 컴플라이언스 대시보드 (Paris Baguette)
-# 한 페이지 스크롤 + 앵커 네비 (깜빡임 없는 버전)
 # ============================================================
 import streamlit as st
 import streamlit.components.v1 as components
@@ -18,51 +17,32 @@ NOW   = datetime.datetime.now(KST)
 TODAY = NOW.strftime("%Y년 %m월 %d일 (%a)")
 
 # ══════════════════════════════════════════════════════════════
-#  1. 사이드바
+#  1. 설정 패널 (expander)
 # ══════════════════════════════════════════════════════════════
 with st.expander("⚙️ 데이터 설정 — 클릭해서 열기", expanded=False):
     sc1, sc2 = st.columns(2)
     with sc1:
-      st.markdown("**📋 KPI 직접 입력**")
-      kpi_goal   = st.number_input("CP 목표 건수",  value=40,  min_value=1)
-      kpi_actual = st.number_input("CP 실적 건수",  value=19,  min_value=0)
-      kpi_sign   = st.number_input("내부신고 건수", value=12,  min_value=0)
-      kpi_law    = st.number_input("법령검토 누적", value=350, min_value=0)
-      kpi_ftc    = st.number_input("공정거래 검토", value=761, min_value=0)
-      st.markdown("**📰 뉴스 키워드**")
-      news_kw  = st.text_input("뉴스 검색어",         value="가맹사업 법령위반")
-      press_kw = st.text_input("공정위/식약처 키워드", value="가맹 공정거래")
-      if st.button("🔄 캐시 초기화"):
-          st.cache_data.clear()
-          st.success("완료!")
+        st.markdown("**📋 KPI 직접 입력**")
+        kpi_goal   = st.number_input("CP 목표 건수",  value=40,  min_value=1)
+        kpi_actual = st.number_input("CP 실적 건수",  value=19,  min_value=0)
+        kpi_sign   = st.number_input("내부신고 건수", value=12,  min_value=0)
+        kpi_law    = st.number_input("법령검토 누적", value=350, min_value=0)
+        kpi_ftc    = st.number_input("공정거래 검토", value=761, min_value=0)
+        st.markdown("**📰 뉴스 키워드**")
+        news_kw  = st.text_input("뉴스 검색어",         value="가맹사업 법령위반")
+        press_kw = st.text_input("공정위/식약처 키워드", value="가맹 공정거래")
+        if st.button("🔄 캐시 초기화"):
+            st.cache_data.clear()
+            st.success("완료!")
     with sc2:
-      st.markdown("**📊 구글 시트 연동** (시트 → 파일 → 웹에 게시 → CSV URL)")
-      gs_cp   = st.text_input("CP 운영현황 URL",    placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv")
-      gs_sign = st.text_input("내부신고 현황 URL",  placeholder="https://docs.google.com/spreadsheets/d/...")
-      gs_law  = st.text_input("법령검토 건수 URL",  placeholder="https://docs.google.com/spreadsheets/d/...")
-      gs_ftc  = st.text_input("공정거래 법령별 URL",placeholder="https://docs.google.com/spreadsheets/d/...")
-      gs_tl   = st.text_input("타임라인 URL",       placeholder="https://docs.google.com/spreadsheets/d/...")
+        st.markdown("**📊 구글 시트 연동** (시트→파일→웹에 게시→CSV URL)")
+        gs_cp   = st.text_input("CP 운영현황 URL",    placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv")
+        gs_sign = st.text_input("내부신고 현황 URL",  placeholder="https://docs.google.com/spreadsheets/d/...")
+        gs_law  = st.text_input("법령검토 건수 URL",  placeholder="https://docs.google.com/spreadsheets/d/...")
+        gs_ftc  = st.text_input("공정거래 법령별 URL",placeholder="https://docs.google.com/spreadsheets/d/...")
+        gs_tl   = st.text_input("타임라인 URL",       placeholder="https://docs.google.com/spreadsheets/d/...")
 
 kpi_pct = int(kpi_actual / kpi_goal * 100) if kpi_goal else 0
-
-# 네비바 고정 JS 주입 (Streamlit iframe 우회)
-st.markdown("""
-<script>
-window.addEventListener('load', function() {
-    // parent frame에 네비 고정 CSS 추가
-    try {
-        var s = window.parent.document.createElement('style');
-        s.textContent = '.dash-nav{position:fixed!important;top:0!important;left:0!important;right:0!important;z-index:999999!important;width:100%!important}';
-        window.parent.document.head.appendChild(s);
-    } catch(e) {}
-    // 현재 문서에도 적용
-    var s2 = document.createElement('style');
-    s2.textContent = '.dash-nav{position:fixed!important;top:0!important;left:0!important;right:0!important;z-index:999999!important;width:100%!important}';
-    document.head.appendChild(s2);
-});
-</script>
-""", unsafe_allow_html=True)
-
 
 # ══════════════════════════════════════════════════════════════
 #  2. 데이터 로딩
@@ -131,132 +111,167 @@ df_ftc = load_gs(gs_ftc); ftc_data = df_ftc.to_dict("records") if df_ftc  is not
 df_tl  = load_gs(gs_tl);  tl_data  = df_tl.to_dict("records")  if df_tl   is not None else DEFAULT_TL
 
 # ══════════════════════════════════════════════════════════════
-#  3. CSS + 앵커 네비 (st.markdown - iframe 없음)
+#  3. 고정 네비 주입 (components.html - f-string 아님)
 # ══════════════════════════════════════════════════════════════
-st.markdown(f"""
+components.html("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap');
-*,*::before,*::after{{box-sizing:border-box;margin:0;padding:0}}
-html,body,.stApp{{font-family:'Noto Sans KR',sans-serif!important}}
-.stApp{{background:#F0F4F8!important}}
-header[data-testid="stHeader"]{{display:none!important}}
-div[data-testid="stStatusWidget"]{{display:none!important}}
-section[data-testid="stMain"]{{padding:0!important;overflow:visible!important}}
-section[data-testid="stMain"]>div{{padding:0!important;overflow:visible!important}}
-.block-container{{padding:0!important;max-width:100%!important;overflow:visible!important}}
-.stApp{{overflow-y:auto!important}}
-
-/* 고정 네비 */
-.dash-nav{{position:sticky;top:0;z-index:999999;background:linear-gradient(135deg,#061B4A 0%,#0D3B8E 60%,#1A56C4 100%);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;box-shadow:0 2px 12px rgba(6,27,74,.3)}}
-.nav-left{{display:flex;align-items:center;gap:12px}}
-.nav-title{{color:white;font-size:1rem;font-weight:800}}
-.nav-badge{{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:3px 10px;color:rgba(255,255,255,.85);font-size:.68rem;font-weight:600}}
-.nav-links{{display:flex;gap:2px}}
-.nav-btn{{background:transparent;border:none;color:rgba(255,255,255,.7);padding:7px 14px;border-radius:6px;font-size:.76rem;font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .15s;white-space:nowrap;text-decoration:none;display:inline-block}}
-.nav-btn:hover{{background:rgba(255,255,255,.15);color:white}}
-.nav-date{{color:rgba(255,255,255,.55);font-size:.7rem}}
-
-/* 섹션 */
-.dash-wrap{{padding:18px 24px 40px}}
-.sec-anchor{{display:block;position:relative;top:-60px;visibility:hidden}}
-.sec-title{{font-size:.95rem;font-weight:700;color:#1A2B5F;display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #E2E8F0;margin-top:4px}}
-.card{{background:white;border-radius:12px;padding:20px;box-shadow:0 1px 6px rgba(0,0,0,.07);border:1px solid #E8EDF5;margin-bottom:16px}}
-.card-head{{font-size:.84rem;font-weight:700;color:#1A2B5F;display:flex;align-items:center;gap:7px;border-bottom:1px solid #EDF2F7;padding-bottom:10px;margin-bottom:12px}}
-
-/* 인사이트 */
-.insight{{background:linear-gradient(135deg,#1A365D,#2B6CB0);border-radius:12px;padding:18px 22px;margin-bottom:18px}}
-.insight-t{{color:white;font-size:.92rem;font-weight:700;margin-bottom:6px}}
-.insight-txt{{color:rgba(255,255,255,.82);font-size:.78rem;line-height:1.6;margin-bottom:10px}}
-.chip{{display:inline-block;border-radius:20px;padding:3px 11px;font-size:.69rem;font-weight:600;margin:2px 3px 2px 0}}
-.chip-warn{{background:rgba(255,87,51,.22);border:1px solid rgba(255,87,51,.45);color:#FED7CC}}
-.chip-ok{{background:rgba(52,211,153,.18);border:1px solid rgba(52,211,153,.38);color:#C6F6D5}}
-
-/* KPI */
-.kpi{{background:white;border-radius:12px;padding:18px 20px;box-shadow:0 1px 6px rgba(0,0,0,.07);border:1px solid #E8EDF5;position:relative;overflow:hidden}}
-.kpi::before{{content:'';position:absolute;top:0;left:0;right:0;height:3px}}
-.kpi.b::before{{background:linear-gradient(90deg,#0D3B8E,#1A56C4)}}
-.kpi.g::before{{background:linear-gradient(90deg,#22863a,#28a745)}}
-.kpi.o::before{{background:linear-gradient(90deg,#d45500,#f77f00)}}
-.kpi.r::before{{background:linear-gradient(90deg,#c0392b,#e74c3c)}}
-.kpi-lbl{{font-size:.68rem;font-weight:700;color:#718096;letter-spacing:.5px;margin-bottom:7px}}
-.kpi-val{{font-size:2rem;font-weight:800;color:#1A2B5F;line-height:1;margin-bottom:5px}}
-.kpi-val span{{font-size:.95rem;font-weight:600;color:#4A5568}}
-.kpi-sub{{font-size:.71rem;color:#718096;margin-bottom:8px}}
-.kpi-bar{{height:4px;background:#E8EDF5;border-radius:2px;overflow:hidden}}
-.kpi-fill{{height:100%;border-radius:2px}}
-
-/* 뉴스 */
-.news-row{{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px dashed #EDF2F7}}
-.news-row:last-child{{border-bottom:none}}
-.news-n{{min-width:20px;height:20px;background:#EBF4FF;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#0D3B8E;flex-shrink:0;margin-top:1px}}
-.news-t{{font-size:.78rem;color:#1A2B5F;text-decoration:none;line-height:1.45;flex:1}}
-.news-t:hover{{color:#0D3B8E;text-decoration:underline}}
-.news-src{{font-size:.63rem;color:#A0AEC0;margin-top:2px}}
-.press{{background:#F7FAFF;border:1px solid #BEE3F8;border-radius:8px;padding:11px 13px;margin-bottom:7px}}
-.press-d{{font-size:.65rem;color:#3182CE;font-weight:600;margin-bottom:3px}}
-.press-t{{font-size:.78rem;color:#1A2B5F;text-decoration:none;font-weight:600;line-height:1.4;display:block}}
-.press-t:hover{{color:#0D3B8E}}
-.badge{{display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:3px 8px;font-size:.63rem;font-weight:600;margin-bottom:8px;background:#FEEBC8;color:#744210}}
-.no-data{{text-align:center;padding:20px;color:#A0AEC0;font-size:.8rem}}
-
-/* CP 테이블 */
-.cp-table{{width:100%;border-collapse:collapse;font-size:13px}}
-.cp-table th{{background:#EDF2F7;color:#4A5568;font-weight:700;padding:9px 10px;text-align:center;font-size:11px;border:1px solid #E2E8F0}}
-.cp-table td{{padding:8px 10px;border:1px solid #E2E8F0;color:#2D3748;text-align:center;vertical-align:middle}}
-.cat{{background:#F7FAFF;font-weight:700;color:#1A2B5F}}
-.nm{{text-align:left}}.act{{text-align:left;color:#4A5568;font-size:12px}}
-.done{{background:#C6F6D5;color:#22543D;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700;display:inline-block}}
-.ing{{background:#BEE3F8;color:#2C5282;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700;display:inline-block}}
-.plan{{background:#EDF2F7;color:#4A5568;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700;display:inline-block}}
-.hi{{color:#22543D;font-weight:700}}.md{{color:#2C5282;font-weight:700}}.lo{{color:#c0392b;font-weight:700}}
-.cp-table tfoot td{{background:#EDF2F7;font-weight:700;color:#1A2B5F}}
-
-/* 타임라인 */
-.tl-item{{display:flex;align-items:flex-start;gap:7px;padding:5px 0;border-bottom:1px dashed #EDF2F7}}
-.tl-item:last-child{{border-bottom:none}}
-.tl-date{{font-size:.66rem;color:#3182CE;font-weight:700;white-space:nowrap;min-width:34px}}
-.tl-dot{{width:6px;height:6px;background:#0D3B8E;border-radius:50%;margin-top:4px;flex-shrink:0}}
-.tl-text{{font-size:.74rem;color:#2D3748;line-height:1.4}}
-.tl-sec{{font-size:.74rem;font-weight:700;color:#4A5568;border-bottom:2px solid #E2E8F0;padding-bottom:5px;margin-bottom:8px}}
-
-/* TOP 버튼 */
-.top-btn{{position:fixed;bottom:28px;right:18px;width:40px;height:40px;background:linear-gradient(135deg,#0B2461,#1A56C4);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.1rem;font-weight:700;box-shadow:0 3px 14px rgba(13,59,142,.4);cursor:pointer;border:none;z-index:999;text-decoration:none}}
-
-@media(max-width:900px){{.nav-links{{display:none}}}}
-.stExpander details summary{{background:#EBF4FF!important;border:1.5px solid #BEE3F8!important;border-radius:8px!important;padding:10px 14px!important;cursor:pointer}}
-.stExpander details summary p,.stExpander details summary span,.stExpander summary *{{color:#0D3B8E!important;font-weight:700!important;font-size:.88rem!important}}
-.stExpander details[open] summary{{border-radius:8px 8px 0 0!important}}
-[data-testid="stExpanderToggleIcon"]{{color:#0D3B8E!important}}
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@600;700;800&display=swap');
+#fixed-nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 999999;
+    background: linear-gradient(135deg,#061B4A 0%,#0D3B8E 60%,#1A56C4 100%);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 52px;
+    box-shadow: 0 2px 12px rgba(6,27,74,.3);
+    font-family: 'Noto Sans KR', sans-serif;
+}
+.nav-title { color:white; font-size:1rem; font-weight:800; }
+.nav-badge { background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.25); border-radius:20px; padding:3px 10px; color:rgba(255,255,255,.85); font-size:.68rem; font-weight:600; margin-left:10px; }
+.nav-links { display:flex; gap:2px; }
+.nav-btn { background:transparent; border:none; color:rgba(255,255,255,.7); padding:7px 14px; border-radius:6px; font-size:.76rem; font-weight:600; cursor:pointer; font-family:'Noto Sans KR',sans-serif; transition:all .15s; white-space:nowrap; }
+.nav-btn:hover { background:rgba(255,255,255,.15); color:white; }
+.nav-date { color:rgba(255,255,255,.55); font-size:.7rem; }
 </style>
 
-<!-- 고정 네비 -->
-<div class="dash-nav">
-  <div class="nav-left">
+<div id="fixed-nav">
+  <div style="display:flex;align-items:center">
     <span class="nav-title">📊 CP 컴플라이언스 대시보드</span>
     <span class="nav-badge">Paris Baguette</span>
   </div>
   <div class="nav-links">
-    <a class="nav-btn" href="#sec-overview">📈 전체 현황</a>
-    <a class="nav-btn" href="#sec-news">📰 일일 뉴스</a>
-    <a class="nav-btn" href="#sec-cp">📊 CP 운영</a>
-    <a class="nav-btn" href="#sec-chart">🔍 차트 분석</a>
-    <a class="nav-btn" href="#sec-tl">🗓️ 타임라인</a>
+    <button class="nav-btn" onclick="nav('sec-overview')">📈 전체 현황</button>
+    <button class="nav-btn" onclick="nav('sec-news')">📰 일일 뉴스</button>
+    <button class="nav-btn" onclick="nav('sec-cp')">📊 CP 운영</button>
+    <button class="nav-btn" onclick="nav('sec-chart')">🔍 차트 분석</button>
+    <button class="nav-btn" onclick="nav('sec-tl')">🗓️ 타임라인</button>
   </div>
-  <span class="nav-date">📅 {TODAY} · 4월 기준</span>
+  <span class="nav-date" id="nav-date"></span>
 </div>
-<a class="top-btn" href="#sec-overview">↑</a>
-<div class="dash-wrap">
+
+<script>
+// 날짜 표시
+document.getElementById('nav-date').textContent = new Date().toLocaleDateString('ko-KR', {year:'numeric',month:'long',day:'numeric',weekday:'short'}) + ' · 4월 기준';
+
+// 네비 클릭 → 부모 페이지 앵커로 이동
+function nav(id) {
+    // 부모 window의 앵커로 이동
+    var p = window.parent || window;
+    var el = p.document.getElementById(id);
+    if (el) {
+        el.scrollIntoView({behavior: 'smooth', block: 'start'});
+    } else {
+        // iframe 내부에서 찾기
+        p.location.hash = '#' + id;
+    }
+}
+
+// 이 컴포넌트(iframe) 자체는 높이 0으로
+var frame = window.frameElement;
+if (frame) { frame.style.height = '0px'; frame.style.border = 'none'; }
+</script>
+""", height=0)
+
+# ══════════════════════════════════════════════════════════════
+#  4. 전체 CSS (f-string - 중괄호 모두 {{ }} 사용)
+# ══════════════════════════════════════════════════════════════
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body,.stApp{font-family:'Noto Sans KR',sans-serif!important}
+.stApp{background:#F0F4F8!important}
+header[data-testid="stHeader"]{display:none!important}
+div[data-testid="stStatusWidget"]{display:none!important}
+.block-container{padding:0 24px 40px!important;max-width:100%!important;padding-top:60px!important}
+
+/* expander */
+.stExpander details summary{background:#EBF4FF!important;border:1.5px solid #BEE3F8!important;border-radius:8px!important;padding:10px 14px!important}
+.stExpander details summary p,.stExpander details summary span{color:#0D3B8E!important;font-weight:700!important;font-size:.88rem!important}
+[data-testid="stExpanderToggleIcon"]{color:#0D3B8E!important}
+
+/* 섹션 앵커 */
+.sec-anchor{display:block;position:relative;top:-70px;visibility:hidden}
+.sec-title{font-size:.95rem;font-weight:700;color:#1A2B5F;display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #E2E8F0;margin-top:20px}
+
+/* 카드 */
+.card{background:white;border-radius:12px;padding:20px;box-shadow:0 1px 6px rgba(0,0,0,.07);border:1px solid #E8EDF5;margin-bottom:16px}
+.card-head{font-size:.84rem;font-weight:700;color:#1A2B5F;display:flex;align-items:center;gap:7px;border-bottom:1px solid #EDF2F7;padding-bottom:10px;margin-bottom:12px}
+
+/* 인사이트 */
+.insight{background:linear-gradient(135deg,#1A365D,#2B6CB0);border-radius:12px;padding:18px 22px;margin-bottom:18px}
+.insight-t{color:white;font-size:.92rem;font-weight:700;margin-bottom:6px}
+.insight-txt{color:rgba(255,255,255,.82);font-size:.78rem;line-height:1.6;margin-bottom:10px}
+.chip{display:inline-block;border-radius:20px;padding:3px 11px;font-size:.69rem;font-weight:600;margin:2px 3px 2px 0}
+.chip-warn{background:rgba(255,87,51,.22);border:1px solid rgba(255,87,51,.45);color:#FED7CC}
+.chip-ok{background:rgba(52,211,153,.18);border:1px solid rgba(52,211,153,.38);color:#C6F6D5}
+
+/* KPI */
+.kpi{background:white;border-radius:12px;padding:18px 20px;box-shadow:0 1px 6px rgba(0,0,0,.07);border:1px solid #E8EDF5;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi.b::before{background:linear-gradient(90deg,#0D3B8E,#1A56C4)}
+.kpi.g::before{background:linear-gradient(90deg,#22863a,#28a745)}
+.kpi.o::before{background:linear-gradient(90deg,#d45500,#f77f00)}
+.kpi.r::before{background:linear-gradient(90deg,#c0392b,#e74c3c)}
+.kpi-lbl{font-size:.68rem;font-weight:700;color:#718096;letter-spacing:.5px;margin-bottom:7px}
+.kpi-val{font-size:2rem;font-weight:800;color:#1A2B5F;line-height:1;margin-bottom:5px}
+.kpi-val span{font-size:.95rem;font-weight:600;color:#4A5568}
+.kpi-sub{font-size:.71rem;color:#718096;margin-bottom:8px}
+.kpi-bar{height:4px;background:#E8EDF5;border-radius:2px;overflow:hidden}
+.kpi-fill{height:100%;border-radius:2px}
+
+/* 뉴스 */
+.news-row{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px dashed #EDF2F7}
+.news-row:last-child{border-bottom:none}
+.news-n{min-width:20px;height:20px;background:#EBF4FF;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#0D3B8E;flex-shrink:0;margin-top:1px}
+.news-t{font-size:.78rem;color:#1A2B5F;text-decoration:none;line-height:1.45;flex:1}
+.news-t:hover{color:#0D3B8E;text-decoration:underline}
+.news-src{font-size:.63rem;color:#A0AEC0;margin-top:2px}
+.press{background:#F7FAFF;border:1px solid #BEE3F8;border-radius:8px;padding:11px 13px;margin-bottom:7px}
+.press-d{font-size:.65rem;color:#3182CE;font-weight:600;margin-bottom:3px}
+.press-t{font-size:.78rem;color:#1A2B5F;text-decoration:none;font-weight:600;line-height:1.4;display:block}
+.press-t:hover{color:#0D3B8E}
+.badge{display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:3px 8px;font-size:.63rem;font-weight:600;margin-bottom:8px;background:#FEEBC8;color:#744210}
+.no-data{text-align:center;padding:20px;color:#A0AEC0;font-size:.8rem}
+
+/* CP 테이블 */
+.cp-table{width:100%;border-collapse:collapse;font-size:13px}
+.cp-table th{background:#EDF2F7;color:#4A5568;font-weight:700;padding:9px 10px;text-align:center;font-size:11px;border:1px solid #E2E8F0}
+.cp-table td{padding:8px 10px;border:1px solid #E2E8F0;color:#2D3748;text-align:center;vertical-align:middle}
+.cat{background:#F7FAFF;font-weight:700;color:#1A2B5F}
+.nm{text-align:left}.act{text-align:left;color:#4A5568;font-size:12px}
+.done{background:#C6F6D5;color:#22543D;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700;display:inline-block}
+.ing{background:#BEE3F8;color:#2C5282;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700;display:inline-block}
+.plan{background:#EDF2F7;color:#4A5568;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700;display:inline-block}
+.hi{color:#22543D;font-weight:700}.md{color:#2C5282;font-weight:700}.lo{color:#c0392b;font-weight:700}
+.cp-table tfoot td{background:#EDF2F7;font-weight:700;color:#1A2B5F}
+
+/* 타임라인 */
+.tl-item{display:flex;align-items:flex-start;gap:7px;padding:5px 0;border-bottom:1px dashed #EDF2F7}
+.tl-item:last-child{border-bottom:none}
+.tl-date{font-size:.66rem;color:#3182CE;font-weight:700;white-space:nowrap;min-width:34px}
+.tl-dot{width:6px;height:6px;background:#0D3B8E;border-radius:50%;margin-top:4px;flex-shrink:0}
+.tl-text{font-size:.74rem;color:#2D3748;line-height:1.4}
+.tl-sec{font-size:.74rem;font-weight:700;color:#4A5568;border-bottom:2px solid #E2E8F0;padding-bottom:5px;margin-bottom:8px}
+
+/* TOP 버튼 */
+.top-btn{position:fixed;bottom:28px;right:18px;width:40px;height:40px;background:linear-gradient(135deg,#0B2461,#1A56C4);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.1rem;font-weight:700;box-shadow:0 3px 14px rgba(13,59,142,.4);cursor:pointer;border:none;z-index:9998;text-decoration:none}
+</style>
+<button class="top-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════
-#  4. ① 전체 현황
+#  5. ① 전체 현황
 # ══════════════════════════════════════════════════════════════
 st.markdown(f"""
 <span class="sec-anchor" id="sec-overview"></span>
 <div class="insight">
   <div class="insight-t">💡 경영진 핵심 인사이트 — 4월 기준</div>
   <div class="insight-txt">전체 CP 활동 달성률 <strong style="color:#FFD700">{kpi_pct}%</strong>로 목표 대비 미흡.
-  교육 부문(30%)과 운영 부문(25%)이 주요 미달 영역. 내부신고 {kpi_sign}건 중 1건 처리 진행 중.</div>
+  교육(30%)·운영(25%)이 주요 미달 영역. 내부신고 {kpi_sign}건 중 1건 처리 진행 중.</div>
   <div>
     <span class="chip chip-warn">⚠ 교육 목표 30%</span>
     <span class="chip chip-warn">⚠ 운영 목표 25%</span>
@@ -268,10 +283,10 @@ st.markdown(f"""
 
 k1,k2,k3,k4 = st.columns(4)
 for col, lbl, val, unit, sub, cls, color, pct in [
-    (k1,"달성률",     str(kpi_pct), "%",  f"목표 {kpi_goal}건 · 실적 {kpi_actual}건", "b","#0D3B8E", kpi_pct),
-    (k2,"내부신고",   str(kpi_sign),"건",  "처리완료 11 · 진행중 1",                   "g","#22863a", min(kpi_sign*3,100)),
-    (k3,"법령검토",   str(kpi_law), "건",  "평균 3.5일 · 미처리 2건",                  "o","#d45500", 70),
-    (k4,"공정거래검토",str(kpi_ftc),"건",  "가맹사업법 594건(78%)",                    "r","#c0392b", 76),
+    (k1,"달성률",      str(kpi_pct), "%",  f"목표 {kpi_goal}건 · 실적 {kpi_actual}건","b","#0D3B8E",kpi_pct),
+    (k2,"내부신고",    str(kpi_sign),"건",  "처리완료 11 · 진행중 1",                  "g","#22863a",min(kpi_sign*3,100)),
+    (k3,"법령검토",    str(kpi_law), "건",  "평균 3.5일 · 미처리 2건",                 "o","#d45500",70),
+    (k4,"공정거래검토",str(kpi_ftc), "건",  "가맹사업법 594건(78%)",                   "r","#c0392b",76),
 ]:
     with col:
         st.markdown(f"""
@@ -280,32 +295,28 @@ for col, lbl, val, unit, sub, cls, color, pct in [
           <div class="kpi-val">{val}<span>{unit}</span></div>
           <div class="kpi-sub">{sub}</div>
           <div class="kpi-bar"><div class="kpi-fill" style="width:{min(pct,100)}%;background:{color}"></div></div>
-        </div>
-        """, unsafe_allow_html=True)
+        </div>""", unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════
-#  5. ② 일일 뉴스
+#  6. ② 일일 뉴스
 # ══════════════════════════════════════════════════════════════
-st.markdown('<span class="sec-anchor" id="sec-news"></span>', unsafe_allow_html=True)
-st.markdown('<div class="sec-title">📰 일일 뉴스 · 보도자료</div>', unsafe_allow_html=True)
-
+st.markdown('<span class="sec-anchor" id="sec-news"></span><div class="sec-title">📰 일일 뉴스 · 보도자료</div>', unsafe_allow_html=True)
 with st.spinner("뉴스 로딩 중..."):
     news_list, news_ts   = fetch_news(news_kw)
     press_list, press_ts = fetch_press(press_kw)
 
 nc1, nc2 = st.columns(2)
 with nc1:
-    news_rows = "".join([f'<div class="news-row"><span class="news-n">{i+1}</span><div><a href="{n["link"]}" target="_blank" class="news-t">{n["title"]}</a><div class="news-src">{n.get("source","")}</div></div></div>' for i,n in enumerate(news_list)]) if news_list else '<div class="no-data">⚠️ 뉴스를 불러오지 못했어요.</div>'
-    st.markdown(f'<div class="card"><div class="card-head">📰 일일 NEWS <span style="margin-left:auto;font-size:.7rem;color:#A0AEC0;font-weight:400">법령/가맹사업</span></div><span class="badge">🕷️ Google News · {news_ts or "미수집"}</span>{news_rows}</div>', unsafe_allow_html=True)
+    rows = "".join([f'<div class="news-row"><span class="news-n">{i+1}</span><div><a href="{n["link"]}" target="_blank" class="news-t">{n["title"]}</a><div class="news-src">{n.get("source","")}</div></div></div>' for i,n in enumerate(news_list)]) if news_list else '<div class="no-data">⚠️ 뉴스를 불러오지 못했어요.</div>'
+    st.markdown(f'<div class="card"><div class="card-head">📰 일일 NEWS <span style="margin-left:auto;font-size:.7rem;color:#A0AEC0;font-weight:400">법령/가맹사업</span></div><span class="badge">🕷️ Google News · {news_ts or "미수집"}</span>{rows}</div>', unsafe_allow_html=True)
 with nc2:
-    press_rows = "".join([f'<div class="press"><div class="press-d">{p.get("date","")} · {p.get("source","")}</div><a href="{p.get("link","#")}" target="_blank" class="press-t">{p.get("title","")}</a></div>' for p in press_list[:5]]) if press_list else '<div class="no-data">⚠️ 보도자료를 불러오지 못했어요.</div>'
-    st.markdown(f'<div class="card"><div class="card-head">📋 공정위/식약처 보도자료 <span style="margin-left:auto;font-size:.7rem;color:#A0AEC0;font-weight:400">업데이트</span></div><span class="badge">🕷️ Google News · {press_ts or "미수집"}</span><div style="margin-top:8px">{press_rows}</div></div>', unsafe_allow_html=True)
+    pr = "".join([f'<div class="press"><div class="press-d">{p.get("date","")} · {p.get("source","")}</div><a href="{p.get("link","#")}" target="_blank" class="press-t">{p.get("title","")}</a></div>' for p in press_list[:5]]) if press_list else '<div class="no-data">⚠️ 보도자료를 불러오지 못했어요.</div>'
+    st.markdown(f'<div class="card"><div class="card-head">📋 공정위/식약처 보도자료 <span style="margin-left:auto;font-size:.7rem;color:#A0AEC0;font-weight:400">업데이트</span></div><span class="badge">🕷️ Google News · {press_ts or "미수집"}</span><div style="margin-top:8px">{pr}</div></div>', unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════
-#  6. ③ CP 운영현황
+#  7. ③ CP 운영현황
 # ══════════════════════════════════════════════════════════════
-st.markdown('<span class="sec-anchor" id="sec-cp"></span>', unsafe_allow_html=True)
-st.markdown('<div class="sec-title">📊 CP 운영현황 <span style="font-size:.72rem;color:#A0AEC0;font-weight:400;margin-left:auto">4월 기준</span></div>', unsafe_allow_html=True)
+st.markdown('<span class="sec-anchor" id="sec-cp"></span><div class="sec-title">📊 CP 운영현황 <span style="font-size:.72rem;color:#A0AEC0;font-weight:400;margin-left:auto">4월 기준</span></div>', unsafe_allow_html=True)
 
 rows_html = ""
 prev_cat  = ""
@@ -321,61 +332,44 @@ for row in cp_data:
     st_s = str(row.get("상태",""))
     sc   = "done" if "완료" in st_s else "ing" if "진행" in st_s else "plan"
     rows_html += f"<tr>{cat_cell}<td class='nm'>{row.get('내용','')}</td><td>{row.get('목표','')}</td><td>{row.get('실적','') or '—'}</td><td>{pct_h}</td><td><span class='{sc}'>{st_s}</span></td><td class='act'>{row.get('주요활동','')}</td></tr>"
-
 tg = sum(int(r.get("목표",0)) for r in cp_data if r.get("목표"))
 ta = sum(int(r.get("실적",0)) for r in cp_data if r.get("실적") and str(r.get("실적")) not in ("","None","nan"))
 tp = int(ta/tg*100) if tg else 0
-
-st.markdown(f"""
-<div class="card" style="overflow-x:auto">
-  <table class="cp-table">
-    <thead><tr><th>구분</th><th>내용</th><th>목표</th><th>실적</th><th>달성률</th><th>상태</th><th>주요 활동</th></tr></thead>
-    <tbody>{rows_html}</tbody>
-    <tfoot><tr><td colspan="2">합계</td><td>{tg}</td><td>{ta}</td><td><span class="lo">{tp}%</span></td><td></td><td></td></tr></tfoot>
-  </table>
-</div>
-""", unsafe_allow_html=True)
+st.markdown(f'<div class="card" style="overflow-x:auto"><table class="cp-table"><thead><tr><th>구분</th><th>내용</th><th>목표</th><th>실적</th><th>달성률</th><th>상태</th><th>주요 활동</th></tr></thead><tbody>{rows_html}</tbody><tfoot><tr><td colspan="2">합계</td><td>{tg}</td><td>{ta}</td><td><span class="lo">{tp}%</span></td><td></td><td></td></tr></tfoot></table></div>', unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════
-#  7. ④ 차트 분석 (각각 별도 components.html)
+#  8. ④ 차트 (각각 별도 components.html)
 # ══════════════════════════════════════════════════════════════
-st.markdown('<span class="sec-anchor" id="sec-chart"></span>', unsafe_allow_html=True)
-st.markdown('<div class="sec-title">🔍 차트 분석</div>', unsafe_allow_html=True)
+st.markdown('<span class="sec-anchor" id="sec-chart"></span><div class="sec-title">🔍 차트 분석</div>', unsafe_allow_html=True)
 
 months    = json.dumps([str(r.get("월","")) for r in sign_data], ensure_ascii=False)
 sign_cnt  = [int(r.get("신고건수",0)) for r in sign_data]
 sign_done = [int(r.get("처리완료",0)) for r in sign_data]
-law_months= json.dumps([str(r.get("월","")) for r in law_data], ensure_ascii=False)
+law_m     = json.dumps([str(r.get("월","")) for r in law_data], ensure_ascii=False)
 law_cum   = [int(r.get("누적건수",0)) for r in law_data]
 ftc_lbl   = json.dumps([str(r.get("법령명","")) for r in ftc_data], ensure_ascii=False)
 ftc_val   = [int(r.get("건수",0)) for r in ftc_data]
 
-cc1, cc2, cc3 = st.columns(3)
-CHART_CSS = '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR&display=swap" rel="stylesheet"><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>'
-
+CHART_HEAD = '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR&display=swap" rel="stylesheet"><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>'
+cc1,cc2,cc3 = st.columns(3)
 with cc1:
     st.markdown('<div class="card"><div class="card-head">📥 내부신고 현황</div></div>', unsafe_allow_html=True)
-    components.html(f"""{CHART_CSS}
-    <canvas id="c1" style="width:100%;height:200px"></canvas>
+    components.html(f"""{CHART_HEAD}<canvas id="c1" style="width:100%;height:200px"></canvas>
     <script>new Chart(document.getElementById('c1'),{{type:'bar',data:{{labels:{months},datasets:[
       {{label:'신고건수',data:{sign_cnt},backgroundColor:'rgba(13,59,142,0.75)',borderRadius:5}},
       {{label:'처리완료',data:{sign_done},backgroundColor:'rgba(52,211,153,0.75)',borderRadius:5}}
     ]}},options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{labels:{{font:{{size:11}},boxWidth:10}}}}}},scales:{{y:{{beginAtZero:true,ticks:{{font:{{size:11}}}}}},x:{{ticks:{{font:{{size:11}}}}}}}}}}
     }});</script>""", height=220)
-
 with cc2:
     st.markdown('<div class="card"><div class="card-head">📖 법령 검토건수</div></div>', unsafe_allow_html=True)
-    components.html(f"""{CHART_CSS}
-    <canvas id="c2" style="width:100%;height:200px"></canvas>
-    <script>new Chart(document.getElementById('c2'),{{type:'line',data:{{labels:{law_months},datasets:[{{
+    components.html(f"""{CHART_HEAD}<canvas id="c2" style="width:100%;height:200px"></canvas>
+    <script>new Chart(document.getElementById('c2'),{{type:'line',data:{{labels:{law_m},datasets:[{{
       label:'누적 검토',data:{law_cum},borderColor:'#0D3B8E',backgroundColor:'rgba(13,59,142,0.08)',fill:true,tension:.4,pointRadius:5,pointBackgroundColor:'#0D3B8E'
     }}]}},options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{labels:{{font:{{size:11}},boxWidth:10}}}}}},scales:{{y:{{beginAtZero:true,ticks:{{font:{{size:11}}}}}},x:{{ticks:{{font:{{size:11}}}}}}}}}}
     }});</script>""", height=220)
-
 with cc3:
     st.markdown('<div class="card"><div class="card-head">⚖️ 공정거래 법령별</div></div>', unsafe_allow_html=True)
-    components.html(f"""{CHART_CSS}
-    <canvas id="c3" style="width:100%;height:200px"></canvas>
+    components.html(f"""{CHART_HEAD}<canvas id="c3" style="width:100%;height:200px"></canvas>
     <script>new Chart(document.getElementById('c3'),{{type:'doughnut',data:{{labels:{ftc_lbl},datasets:[{{
       data:{ftc_val},backgroundColor:['#0D3B8E','#1A56C4','#3182CE','#63B3ED'],borderWidth:2,borderColor:'#fff'
     }}]}},options:{{responsive:true,maintainAspectRatio:false,plugins:{{
@@ -385,20 +379,14 @@ with cc3:
     }});</script>""", height=220)
 
 # ══════════════════════════════════════════════════════════════
-#  8. ⑤ 타임라인
+#  9. ⑤ 타임라인
 # ══════════════════════════════════════════════════════════════
-st.markdown('<span class="sec-anchor" id="sec-tl"></span>', unsafe_allow_html=True)
-st.markdown('<div class="sec-title">🗓️ 4월 주요 활동 타임라인</div>', unsafe_allow_html=True)
-
+st.markdown('<span class="sec-anchor" id="sec-tl"></span><div class="sec-title">🗓️ 4월 주요 활동 타임라인</div>', unsafe_allow_html=True)
 sections = {}
 for row in tl_data:
     sections.setdefault(str(row.get("구분","기타")), []).append((str(row.get("날짜","")), str(row.get("내용",""))))
-
 tl_cols = st.columns(min(len(sections),3))
 for col, (sec, items) in zip(tl_cols, sections.items()):
     with col:
         rows = "".join([f'<div class="tl-item"><span class="tl-date">{d}</span><span class="tl-dot"></span><span class="tl-text">{t}</span></div>' for d,t in items])
         st.markdown(f'<div class="card"><div class="tl-sec">{sec}</div>{rows}</div>', unsafe_allow_html=True)
-
-# 닫기
-st.markdown('</div>', unsafe_allow_html=True)

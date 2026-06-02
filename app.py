@@ -187,11 +187,37 @@ def load_and_chunk():
         try:
             with open(path, "r", encoding=enc, errors="ignore") as f:
                 text = f.read()
-            chunks, i = [], 0
+            # 문서 제목 추출: [출처: 파일명] 또는 파일명 구분자 파싱
+            import re
+            chunks = []
+            current_title = "파리바게뜨 CP 매뉴얼"
+            i = 0
+            lines = text.split("\n")
+            # 문서 제목 후보 패턴: [출처: xxx], ===xxx=== 안의 파일명
+            for line in lines:
+                m = re.search(r'\[출처[:\s:：]+([^\]]+)\]', line)
+                if m:
+                    raw = m.group(1).strip()
+                    # 확장자 제거하고 깔끔하게
+                    title = re.sub(r'\.(pdf|docx|pptx|xlsx|txt)$', '', raw, flags=re.IGNORECASE).strip()
+                    if title:
+                        current_title = title
+            # 청크 생성 시 현재 문서 제목 추적
+            current_title = "파리바게뜨 CP 매뉴얼"
+            i = 0
             while i < len(text):
+                # 이 위치에서 가장 가까운 출처 헤더 찾기
+                snippet = text[max(0,i-200):i]
+                m = re.search(r'\[출처[:\s:：]+([^\]]+)\]', snippet)
+                if m:
+                    raw = m.group(1).strip()
+                    title = re.sub(r'\.(pdf|docx|pptx|xlsx|txt)$', '', raw, flags=re.IGNORECASE).strip()
+                    if title:
+                        current_title = title
                 c = text[i:i+500].strip()
                 if len(c) > 30:
-                    chunks.append(c)
+                    # 청크를 "【문서제목】내용" 형태로 저장
+                    chunks.append(f"【{current_title}】{c}")
                 i += 400
             return text, chunks
         except Exception:
@@ -250,10 +276,11 @@ def ask_chatbot(question):
                    for h in st.session_state.history[-6:])
     prompt = (
         "당신은 파리바게뜨 컴플라이언스 전문 도우미입니다.\n"
-        "아래 자료에서 질문과 관련된 핵심 내용을 찾아 답변하세요.\n"
+        "아래 자료를 읽고 질문과 관련된 내용을 찾아 답변하세요.\n"
         "자료에 없으면 '담당 부서에 문의해 주세요'로 안내하세요.\n"
+        "각 자료 앞에는 【문서제목】이 표시되어 있습니다. source 필드에는 답변에 사용한 문서의 제목만 쓰세요. 페이지 번호는 쓰지 마세요.\n"
         "★ 응답: 반드시 JSON만 출력 (다른 텍스트 금지)\n"
-        '{"summary":"한줄요약","items":[{"icon":"이모지","title":"항목","desc":"설명(선택)"}],"source":"출처 또는 null"}\n\n'
+        '{"summary":"한줄요약","items":[{"icon":"이모지","title":"항목","desc":"설명(선택)"}],"source":"문서제목 또는 null"}\n\n'
         f"[관련 자료]\n{context}\n\n[이전 대화]\n{hist}\n\n[질문]\n{question}"
     )
     payload = {"contents":[{"parts":[{"text":prompt}]}]}

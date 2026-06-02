@@ -141,12 +141,13 @@ html,body,.stApp{{font-family:'Noto Sans KR',sans-serif!important}}
 .stApp{{background:#F0F4F8!important}}
 header[data-testid="stHeader"]{{display:none!important}}
 div[data-testid="stStatusWidget"]{{display:none!important}}
-section[data-testid="stMain"]{{padding:0!important}}
-section[data-testid="stMain"]>div{{padding:0!important}}
-.block-container{{padding:0!important;max-width:100%!important}}
+section[data-testid="stMain"]{{padding:0!important;overflow:visible!important}}
+section[data-testid="stMain"]>div{{padding:0!important;overflow:visible!important}}
+.block-container{{padding:0!important;max-width:100%!important;overflow:visible!important}}
+.stApp{{overflow-y:auto!important}}
 
 /* 고정 네비 */
-.dash-nav{position:sticky;top:0;z-index:999999;background:linear-gradient(135deg,#061B4A 0%,#0D3B8E 60%,#1A56C4 100%);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;box-shadow:0 2px 12px rgba(6,27,74,.3)}
+.dash-nav{{position:sticky;top:0;z-index:999999;background:linear-gradient(135deg,#061B4A 0%,#0D3B8E 60%,#1A56C4 100%);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;box-shadow:0 2px 12px rgba(6,27,74,.3)}}
 .nav-left{{display:flex;align-items:center;gap:12px}}
 .nav-title{{color:white;font-size:1rem;font-weight:800}}
 .nav-badge{{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:3px 10px;color:rgba(255,255,255,.85);font-size:.68rem;font-weight:600}}
@@ -222,6 +223,10 @@ section[data-testid="stMain"]>div{{padding:0!important}}
 .top-btn{{position:fixed;bottom:28px;right:18px;width:40px;height:40px;background:linear-gradient(135deg,#0B2461,#1A56C4);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.1rem;font-weight:700;box-shadow:0 3px 14px rgba(13,59,142,.4);cursor:pointer;border:none;z-index:999;text-decoration:none}}
 
 @media(max-width:900px){{.nav-links{{display:none}}}}
+.stExpander details summary{{background:#EBF4FF!important;border:1.5px solid #BEE3F8!important;border-radius:8px!important;padding:10px 14px!important;cursor:pointer}}
+.stExpander details summary p,.stExpander details summary span,.stExpander summary *{{color:#0D3B8E!important;font-weight:700!important;font-size:.88rem!important}}
+.stExpander details[open] summary{{border-radius:8px 8px 0 0!important}}
+[data-testid="stExpanderToggleIcon"]{{color:#0D3B8E!important}}
 </style>
 
 <!-- 고정 네비 -->

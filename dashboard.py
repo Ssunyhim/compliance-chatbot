@@ -163,9 +163,10 @@ div[data-testid="stStatusWidget"]{{display:none!important}}
 
 /* ── 핵심: stMain을 overflow visible로 해서 fixed 가능하게 ── */
 .stApp{{overflow-y:auto!important;height:100vh!important}}
-section[data-testid="stMain"]{{overflow:visible!important;height:auto!important}}
-section[data-testid="stMain"]>div:first-child{{overflow:visible!important}}
-div[data-testid="stVerticalBlock"]{{overflow:visible!important}}
+section[data-testid="stMain"]{{overflow:visible!important;height:auto!important;min-height:calc(100vh - 0px)!important}}
+section[data-testid="stMain"]>div{{overflow:visible!important;height:auto!important}}
+div[data-testid="stVerticalBlock"]{{overflow:visible!important;height:auto!important}}
+div[data-testid="stVerticalBlockBorderWrapper"]{{overflow:visible!important}}
 
 /* ── 고정 네비 ── */
 .dash-nav{{

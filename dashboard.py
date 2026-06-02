@@ -114,9 +114,23 @@ div[data-testid="column"] .stButton button {
 # ══════════════════════════════════════════════════════════════
 #  사이드바 - 데이터 설정
 # ══════════════════════════════════════════════════════════════
-with st.sidebar:
-    st.markdown("## ⚙️ 데이터 설정")
-    st.caption("KPI 수치 및 구글 시트 URL을 여기서 설정하세요.")
+# sidebar_open 상태에 따라 사이드바 확장 여부 제어
+if st.session_state.get("sidebar_open", True):
+    with st.sidebar:
+        col_sb1, col_sb2 = st.columns([4, 1])
+        with col_sb1:
+            st.markdown("## ⚙️ 데이터 설정")
+        with col_sb2:
+            if st.button("✕", key="close_sidebar", help="닫기"):
+                st.session_state.sidebar_open = False
+                st.rerun()
+        st.caption("KPI 수치 및 구글 시트 URL을 여기서 설정하세요.")
+else:
+    pass  # 사이드바 숨김
+
+if st.session_state.get("sidebar_open", True):
+    with st.sidebar:
+        _dummy = None  # 아래 내용 이어서 표시
     st.markdown("---")
 
     # ── 구글 시트 설정 ──
@@ -341,31 +355,30 @@ with col_h2:
     }
     </style>
     """, unsafe_allow_html=True)
-    # 설정 버튼 - 클릭시 사이드바 강제 열기
-    components.html("""
+    # 설정 버튼 CSS
+    st.markdown("""
     <style>
-    #open-sidebar-btn {
-        background: transparent;
-        border: 2px solid #0D3B8E;
-        border-radius: 8px;
-        color: #0D3B8E;
-        font-size: 13px;
-        font-weight: 700;
-        width: 100%;
-        height: 58px;
-        cursor: pointer;
-        font-family: 'Noto Sans KR', sans-serif;
-        transition: all .15s;
+    [class*="st-key-open_sidebar"] button {
+        background: white !important;
+        color: #0D3B8E !important;
+        border: 2px solid #0D3B8E !important;
+        border-radius: 8px !important;
+        font-size: .82rem !important;
+        font-weight: 700 !important;
+        height: 58px !important;
+        width: 100% !important;
+        font-family: 'Noto Sans KR', sans-serif !important;
     }
-    #open-sidebar-btn:hover { background: #EBF4FF; }
+    [class*="st-key-open_sidebar"] button:hover {
+        background: #EBF4FF !important;
+        color: #0D3B8E !important;
+        border-color: #1A56C4 !important;
+    }
     </style>
-    <button id="open-sidebar-btn" onclick="
-        var btn = window.parent.document.querySelector('[data-testid=collapsedControl]');
-        var sidebar = window.parent.document.querySelector('[data-testid=stSidebar]');
-        var isCollapsed = sidebar && sidebar.getAttribute('aria-expanded') === 'false';
-        if(btn) btn.click();
-    ">⚙️ 설정</button>
-    """, height=68)
+    """, unsafe_allow_html=True)
+    if st.button("⚙️ 설정", key="open_sidebar", use_container_width=True):
+        st.session_state.sidebar_open = True
+        st.rerun()
 
 # ══════════════════════════════════════════════════════════════
 #  탭

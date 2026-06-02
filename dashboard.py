@@ -45,6 +45,25 @@ with st.expander("⚙️ 데이터 설정 — 클릭해서 열기", expanded=Fal
 
 kpi_pct = int(kpi_actual / kpi_goal * 100) if kpi_goal else 0
 
+# 네비바 고정 JS 주입 (Streamlit iframe 우회)
+st.markdown("""
+<script>
+window.addEventListener('load', function() {
+    // parent frame에 네비 고정 CSS 추가
+    try {
+        var s = window.parent.document.createElement('style');
+        s.textContent = '.dash-nav{position:fixed!important;top:0!important;left:0!important;right:0!important;z-index:999999!important;width:100%!important}';
+        window.parent.document.head.appendChild(s);
+    } catch(e) {}
+    // 현재 문서에도 적용
+    var s2 = document.createElement('style');
+    s2.textContent = '.dash-nav{position:fixed!important;top:0!important;left:0!important;right:0!important;z-index:999999!important;width:100%!important}';
+    document.head.appendChild(s2);
+});
+</script>
+""", unsafe_allow_html=True)
+
+
 # ══════════════════════════════════════════════════════════════
 #  2. 데이터 로딩
 # ══════════════════════════════════════════════════════════════
@@ -127,7 +146,7 @@ section[data-testid="stMain"]>div{{padding:0!important}}
 .block-container{{padding:0!important;max-width:100%!important}}
 
 /* 고정 네비 */
-.dash-nav{{position:sticky;top:0;z-index:9999;background:linear-gradient(135deg,#061B4A 0%,#0D3B8E 60%,#1A56C4 100%);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;box-shadow:0 2px 12px rgba(6,27,74,.3)}}
+.dash-nav{position:sticky;top:0;z-index:999999;background:linear-gradient(135deg,#061B4A 0%,#0D3B8E 60%,#1A56C4 100%);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;box-shadow:0 2px 12px rgba(6,27,74,.3)}
 .nav-left{{display:flex;align-items:center;gap:12px}}
 .nav-title{{color:white;font-size:1rem;font-weight:800}}
 .nav-badge{{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:3px 10px;color:rgba(255,255,255,.85);font-size:.68rem;font-weight:600}}

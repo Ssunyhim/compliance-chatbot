@@ -159,14 +159,10 @@ html,body,.stApp{{font-family:'Noto Sans KR',sans-serif!important}}
 .stApp{{background:#F0F4F8!important}}
 header[data-testid="stHeader"]{{display:none!important}}
 div[data-testid="stStatusWidget"]{{display:none!important}}
-.block-container{{padding:0 24px 40px!important;max-width:100%!important;padding-top:68px!important}}
+.block-container{{padding:20px 24px 40px!important;max-width:100%!important}}
 
 /* ── 핵심: stMain을 overflow visible로 해서 fixed 가능하게 ── */
-.stApp{{overflow-y:auto!important;height:100vh!important}}
-section[data-testid="stMain"]{{overflow:visible!important;height:auto!important;min-height:calc(100vh - 0px)!important}}
-section[data-testid="stMain"]>div{{overflow:visible!important;height:auto!important}}
-div[data-testid="stVerticalBlock"]{{overflow:visible!important;height:auto!important}}
-div[data-testid="stVerticalBlockBorderWrapper"]{{overflow:visible!important}}
+/* 기본 Streamlit 스크롤 유지 - overflow 건드리지 않음 */
 
 /* ── 고정 네비 ── */
 .dash-nav{{
@@ -189,7 +185,7 @@ div[data-testid="stVerticalBlockBorderWrapper"]{{overflow:visible!important}}
 .nav-date{{color:rgba(255,255,255,.55);font-size:.7rem;white-space:nowrap}}
 
 /* 섹션 */
-.sec-anchor{{display:block;position:relative;top:-70px;visibility:hidden}}
+.sec-anchor{{display:block;position:relative;top:-20px;visibility:hidden}}
 .sec-title{{font-size:.95rem;font-weight:700;color:#1A2B5F;display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #E2E8F0;margin-top:20px}}
 .card{{background:white;border-radius:12px;padding:20px;box-shadow:0 1px 6px rgba(0,0,0,.07);border:1px solid #E8EDF5;margin-bottom:16px}}
 .card-head{{font-size:.84rem;font-weight:700;color:#1A2B5F;display:flex;align-items:center;gap:7px;border-bottom:1px solid #EDF2F7;padding-bottom:10px;margin-bottom:12px}}

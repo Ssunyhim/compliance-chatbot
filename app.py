@@ -214,11 +214,11 @@ def load_and_chunk():
                     title = re.sub(r'\.(pdf|docx|pptx|xlsx|txt)$', '', raw, flags=re.IGNORECASE).strip()
                     if title:
                         current_title = title
-                c = text[i:i+500].strip()
+                c = text[i:i+800].strip()
                 if len(c) > 30:
                     # 청크를 "【문서제목】내용" 형태로 저장
                     chunks.append(f"【{current_title}】{c}")
-                i += 400
+                i += 600
             return text, chunks
         except Exception:
             continue
@@ -237,7 +237,7 @@ ABBR_MAP = {
     "제재": "제재 처벌 과징금 시정조치 형사고발",
 }
 
-def get_relevant_chunks(query, top_k=12):
+def get_relevant_chunks(query, top_k=20):
     """RAG: 약어 확장 + n-gram 키워드 매칭"""
     if not MANUAL_CHUNKS:
         return []
@@ -251,7 +251,7 @@ def get_relevant_chunks(query, top_k=12):
     scored = sorted(((sum(1 for ng in ngrams if ng in c), c) for c in MANUAL_CHUNKS), reverse=True)
     result = [c for s,c in scored[:top_k] if s > 0]
     if len(result) < 3:
-        result = [c for _,c in scored[:15]]
+        result = [c for _,c in scored[:25]]
     return result
 
 # ══════════════════════════════════════════════════════════════

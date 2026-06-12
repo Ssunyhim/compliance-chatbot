@@ -2,7 +2,7 @@
 # app.py  ─  파리크라상 컴플라이언스 가이드 v2.0 (Paris Baguette)
 # 새 기능: 로그인, RAG, 피드백, 대화내보내기, 관리자페이지, 감사로그
 # ============================================================
-import os, time, json, requests, datetime, threading
+import os, time, json, requests, datetime, threading, base64
 from zoneinfo import ZoneInfo
 import streamlit as st
 
@@ -196,6 +196,9 @@ MASCOT_SVG = """<svg width="100%" height="100%" viewBox="0 0 200 200" xmlns="htt
 <circle cx="100" cy="156" r="17" fill="none" stroke="#FFFFFF" stroke-width="2"/>
 <path d="M92 156 L98 163 L110 147" stroke="#FFFFFF" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>"""
+
+_mascot_b64 = base64.b64encode(MASCOT_SVG.encode("utf-8")).decode("ascii")
+MASCOT_SVG = f'<img src="data:image/svg+xml;base64,{_mascot_b64}" style="width:100%;height:100%;display:block;object-fit:contain" alt="mascot"/>'
 
 
 @st.cache_resource

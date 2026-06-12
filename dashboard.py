@@ -164,16 +164,16 @@ div[data-testid="stStatusWidget"]{{display:none!important}}
 /* ── 핵심: stMain을 overflow visible로 해서 fixed 가능하게 ── */
 /* 기본 Streamlit 스크롤 유지 - overflow 건드리지 않음 */
 
-/* ── 상단 네비 (sticky - 스크롤 영역 안에서 고정) ── */
-.dash-nav{{
-    position:sticky!important;top:0!important;
-    z-index:10!important;
+/* ── 상단 네비 (JS로 body 최상위로 이동시켜 진짜 고정) ── */
+#pb-nav.dash-nav{{
+    position:fixed!important;top:0!important;left:0!important;right:0!important;
+    z-index:100!important;
     background:linear-gradient(135deg,#061B4A 0%,#0D3B8E 60%,#1A56C4 100%)!important;
     padding:0 24px!important;
     display:flex!important;align-items:center!important;justify-content:space-between!important;
     height:52px!important;
     box-shadow:0 2px 12px rgba(6,27,74,.3)!important;
-    margin:0 -24px 16px -24px!important;
+    margin:0!important;
 }}
 .nav-left{{display:flex;align-items:center;gap:12px}}
 .nav-title{{color:white;font-size:1rem;font-weight:800}}
@@ -183,8 +183,11 @@ div[data-testid="stStatusWidget"]{{display:none!important}}
 .nav-btn:hover{{background:rgba(255,255,255,.15);color:white}}
 .nav-date{{color:rgba(255,255,255,.55);font-size:.7rem;white-space:nowrap}}
 
+/* 네비가 가리는 만큼 본문 위쪽 여백 */
+.nav-spacer{{height:60px}}
+
 /* 섹션 */
-.sec-anchor{{display:block;position:relative;top:-20px;visibility:hidden}}
+.sec-anchor{{display:block;position:relative;top:-66px;visibility:hidden}}
 .sec-title{{font-size:.95rem;font-weight:700;color:#1A2B5F;display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #E2E8F0;margin-top:20px}}
 .card{{background:white;border-radius:12px;padding:20px;box-shadow:0 1px 6px rgba(0,0,0,.07);border:1px solid #E8EDF5;margin-bottom:16px}}
 .card-head{{font-size:.84rem;font-weight:700;color:#1A2B5F;display:flex;align-items:center;gap:7px;border-bottom:1px solid #EDF2F7;padding-bottom:10px;margin-bottom:12px}}
@@ -239,9 +242,9 @@ div[data-testid="stStatusWidget"]{{display:none!important}}
 @media(max-width:900px){{.nav-links{{display:none}}}}
 </style>
 
-<!-- 고정(sticky) 네비 -->
+<!-- 상단 네비 (JS로 body로 이동되어 진짜 고정됨) -->
 <span class="sec-anchor" id="sec-top"></span>
-<div class="dash-nav">
+<div id="pb-nav" class="dash-nav">
   <div class="nav-left">
     <span class="nav-title">📊 CP 컴플라이언스 대시보드</span>
     <span class="nav-badge">Paris Baguette</span>
@@ -256,7 +259,21 @@ div[data-testid="stStatusWidget"]{{display:none!important}}
   </div>
   <span class="nav-date">📅 {TODAY} · 4월 기준</span>
 </div>
+<div class="nav-spacer"></div>
 """, unsafe_allow_html=True)
+
+# 네비를 진짜 body 최상위로 이동시켜 어떤 부모의 overflow에도 영향받지 않게 함
+components.html("""
+<script>
+(function(){
+    var doc = window.parent.document;
+    var nav = doc.getElementById('pb-nav');
+    if (nav && nav.parentElement !== doc.body) {
+        doc.body.insertBefore(nav, doc.body.firstChild);
+    }
+})();
+</script>
+""", height=0)
 
 # ══════════════════════════════════════════════════════════════
 #  4. ① 전체 현황

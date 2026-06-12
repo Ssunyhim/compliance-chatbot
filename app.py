@@ -178,6 +178,26 @@ QUICK_QUESTIONS = [
 ]
 QUICK_REPLIES = ["↺ 처음으로", "CP 교육 일정", "관련 법령 보기"]
 
+MASCOT_SVG = """<svg width="100%" height="100%" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+<ellipse cx="100" cy="115" rx="78" ry="58" fill="#F0C36A"/>
+<path d="M28 120 Q35 60 100 50 Q165 60 172 120 Q160 145 100 152 Q40 145 28 120 Z" fill="#F6D795"/>
+<path d="M45 100 Q55 75 80 70" stroke="#E0AE56" stroke-width="4" fill="none" stroke-linecap="round"/>
+<path d="M120 70 Q145 75 155 100" stroke="#E0AE56" stroke-width="4" fill="none" stroke-linecap="round"/>
+<path d="M55 130 Q65 110 90 105" stroke="#E0AE56" stroke-width="4" fill="none" stroke-linecap="round"/>
+<path d="M110 105 Q135 110 145 130" stroke="#E0AE56" stroke-width="4" fill="none" stroke-linecap="round"/>
+<circle cx="78" cy="108" r="7" fill="#3A2B1A"/>
+<circle cx="122" cy="108" r="7" fill="#3A2B1A"/>
+<circle cx="80" cy="105" r="2.2" fill="#FFFFFF"/>
+<circle cx="124" cy="105" r="2.2" fill="#FFFFFF"/>
+<ellipse cx="64" cy="124" rx="10" ry="6" fill="#F4A693" opacity="0.55"/>
+<ellipse cx="136" cy="124" rx="10" ry="6" fill="#F4A693" opacity="0.55"/>
+<path d="M82 128 Q100 142 118 128" stroke="#3A2B1A" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+<circle cx="100" cy="156" r="17" fill="#0D3B8E"/>
+<circle cx="100" cy="156" r="17" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+<path d="M92 156 L98 163 L110 147" stroke="#FFFFFF" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>"""
+
+
 @st.cache_resource
 def load_and_chunk():
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "manual_text.txt")
@@ -362,13 +382,13 @@ if not st.session_state.logged_in:
     <div class="login-outer">
       <div class="login-card">
         <div class="login-logo-area">
-          <div style="font-size:2.5rem">👾</div>
+          <div style="width:64px;height:64px;margin:0 auto">👾</div>
           <h1>파리크라상 컴플라이언스 가이드</h1>
           <p>사내 CP 자료 기반 &nbsp;·&nbsp; 임직원 전용</p>
         </div>
       </div>
     </div>
-    """, unsafe_allow_html=True)
+    """.replace("👾", MASCOT_SVG), unsafe_allow_html=True)
 
     # 모드 선택 버튼
     col_u, col_a = st.columns(2)
@@ -627,7 +647,7 @@ st.markdown(f"""
   ✅ &nbsp;FAQ 자료 로드 완료 &nbsp; 총 <strong>&nbsp;{MANUAL_CHARS}자</strong>
   &nbsp;&nbsp;|&nbsp;&nbsp; 👤 {st.session_state.user_id}
 </div>
-""", unsafe_allow_html=True)
+""".replace("👾", MASCOT_SVG), unsafe_allow_html=True)
 
 # 로그아웃 버튼 (헤더 바로 아래 우측)
 hcol1, hcol2 = st.columns([8, 1.5])
@@ -655,7 +675,7 @@ if not bot_replied:
       </div>
     </div>
     <div class="msg-time">{NOW_STR}</div>
-    """, unsafe_allow_html=True)
+    """.replace("👾", MASCOT_SVG), unsafe_allow_html=True)
     for icon, label, _ in QUICK_QUESTIONS:
         if st.button(f"{icon}  {label}", key=f"qq_{label}"):
             st.session_state.pending = label
@@ -676,14 +696,14 @@ for i, msg in enumerate(st.session_state.history):
           <div class="bot-bubble">{parse_response(msg["content"])}</div>
         </div>
         <div class="msg-time">{msg_time}</div>
-        """, unsafe_allow_html=True)
+        """.replace("👾", MASCOT_SVG), unsafe_allow_html=True)
 
         # 피드백 버튼 (한글 텍스트)
 
 
 # 타이핑 중 표시
 if st.session_state.is_typing:
-    st.markdown("""
+    st.markdown(f"""
     <div class="bot-row">
       <div class="bot-avatar">👾</div>
       <div class="typing-bubble">
@@ -691,7 +711,7 @@ if st.session_state.is_typing:
         <span class="dot"></span><span class="dot"></span><span class="dot"></span>
       </div>
     </div>
-    """, unsafe_allow_html=True)
+    """.replace("👾", MASCOT_SVG), unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
 

@@ -3,7 +3,7 @@
 # ============================================================
 import streamlit as st
 import streamlit.components.v1 as components
-import datetime, json, requests, pandas as pd
+import datetime, json, requests, pandas as pd, time, calendar
 from zoneinfo import ZoneInfo
 
 st.set_page_config(
@@ -147,6 +147,11 @@ with st.sidebar:
 
 kpi_pct = int(kpi_actual / kpi_goal * 100) if kpi_goal else 0
 
+# 뉴스/보도자료 새로고침 & 정렬 상태
+for k, v in [("news_refresh",0),("press_refresh",0),("news_sort","관련도순"),("press_sort","관련도순")]:
+    if k not in st.session_state:
+        st.session_state[k] = v
+
 # ══════════════════════════════════════════════════════════════
 #  2. 데이터 로딩 — 매일 오전 10시(KST) 기준 갱신
 # ══════════════════════════════════════════════════════════════
@@ -160,29 +165,47 @@ NEWS_CACHE_KEY = get_news_cache_key()
 NEWS_UPDATE_LABEL = f"{NEWS_CACHE_KEY} 10:00 기준"
 
 @st.cache_data(ttl=25*3600, show_spinner=False)
-def fetch_news(keyword, cache_key):
+def fetch_news(keyword, cache_key, refresh_token):
     try:
         import feedparser
         q = requests.utils.quote(keyword)
         feed = feedparser.parse(f"https://news.google.com/rss/search?q={q}&hl=ko&gl=KR&ceid=KR:ko")
         res = []
-        for e in feed.entries[:6]:
+        for e in feed.entries[:8]:
             t = e.get("title",""); p = t.rsplit(" - ",1)
-            res.append({"title":p[0].strip(),"link":e.get("link","#"),"source":p[1].strip() if len(p)>1 else ""})
-        return res, NEWS_UPDATE_LABEL
+            pp = e.get("published_parsed")
+            ts = calendar.timegm(pp) if pp else 0
+            res.append({
+                "title":p[0].strip(),
+                "link":e.get("link","#"),
+                "source":p[1].strip() if len(p)>1 else "",
+                "ts": ts,
+                "date": e.get("published","")[:16],
+            })
+        label = NEWS_UPDATE_LABEL if refresh_token == 0 else NOW.strftime("%Y-%m-%d %H:%M") + " 즉시갱신"
+        return res, label
     except: return [], None
 
 @st.cache_data(ttl=25*3600, show_spinner=False)
-def fetch_press(keyword, cache_key):
+def fetch_press(keyword, cache_key, refresh_token):
     try:
         import feedparser
         res = []
         for q_txt, src in [("공정거래위원회 "+keyword,"공정거래위원회"),("식품의약품안전처 가맹","식품의약품안전처")]:
             feed = feedparser.parse(f"https://news.google.com/rss/search?q={requests.utils.quote(q_txt)}&hl=ko&gl=KR&ceid=KR:ko")
-            for e in feed.entries[:3]:
+            for e in feed.entries[:5]:
                 t = e.get("title","").rsplit(" - ",1)[0].strip()
-                res.append({"title":t,"link":e.get("link","#"),"date":e.get("published","")[:10],"source":src})
-        return res, NEWS_UPDATE_LABEL
+                pp = e.get("published_parsed")
+                ts = calendar.timegm(pp) if pp else 0
+                res.append({
+                    "title":t,
+                    "link":e.get("link","#"),
+                    "date":e.get("published","")[:10],
+                    "source":src,
+                    "ts": ts,
+                })
+        label = NEWS_UPDATE_LABEL if refresh_token == 0 else NOW.strftime("%Y-%m-%d %H:%M") + " 즉시갱신"
+        return res, label
     except: return [], None
 
 @st.cache_data(ttl=3600, show_spinner=False)
@@ -297,6 +320,20 @@ div[data-testid="stStatusWidget"]{{display:none!important}}
 .press-t:hover{{color:#0D3B8E}}
 .badge{{display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:3px 8px;font-size:.63rem;font-weight:600;margin-bottom:8px;background:#FEEBC8;color:#744210}}
 .no-data{{text-align:center;padding:20px;color:#A0AEC0;font-size:.8rem}}
+
+/* 뉴스 툴바 (새로고침/정렬) */
+.news-toolbar [data-testid="stHorizontalBlock"]{{gap:6px!important}}
+.news-toolbar .stButton button{{
+    background:#EBF4FF!important;border:1.5px solid #BEE3F8!important;color:#0D3B8E!important;
+    border-radius:8px!important;font-size:.74rem!important;font-weight:700!important;
+    height:34px!important;padding:0 10px!important;white-space:nowrap!important;
+}}
+.news-toolbar .stButton button:hover{{background:#0D3B8E!important;color:white!important;border-color:#0D3B8E!important}}
+.news-toolbar .stSelectbox div[data-baseweb="select"]{{
+    border-radius:8px!important;border:1.5px solid #BEE3F8!important;background:#EBF4FF!important;
+    min-height:34px!important;
+}}
+.news-toolbar .stSelectbox div[data-baseweb="select"] *{{color:#0D3B8E!important;font-size:.74rem!important;font-weight:700!important}}
 .cp-table{{width:100%;border-collapse:collapse;font-size:13px}}
 .cp-table th{{background:#EDF2F7;color:#4A5568;font-weight:700;padding:9px 10px;text-align:center;font-size:11px;border:1px solid #E2E8F0}}
 .cp-table td{{padding:8px 10px;border:1px solid #E2E8F0;color:#2D3748;text-align:center;vertical-align:middle}}
@@ -409,16 +446,49 @@ for col,lbl,val,unit,sub,cls,color,pct in [
 #  5. ② 일일 뉴스
 # ══════════════════════════════════════════════════════════════
 st.markdown('<span class="sec-anchor" id="sec-news"></span><div class="sec-title">📰 일일 뉴스 · 보도자료</div>', unsafe_allow_html=True)
+
+st.markdown('<div class="news-toolbar">', unsafe_allow_html=True)
+tb1, tb2 = st.columns(2)
+with tb1:
+    rtcol, stcol = st.columns([1,1.3])
+    with rtcol:
+        if st.button("🔄 지금 갱신", key="news_refresh_btn", use_container_width=True):
+            st.session_state.news_refresh += 1
+            st.rerun()
+    with stcol:
+        st.session_state.news_sort = st.selectbox(
+            "정렬", ["관련도순","최신순"],
+            index=["관련도순","최신순"].index(st.session_state.news_sort),
+            key="news_sort_sel", label_visibility="collapsed")
+with tb2:
+    rtcol2, stcol2 = st.columns([1,1.3])
+    with rtcol2:
+        if st.button("🔄 지금 갱신", key="press_refresh_btn", use_container_width=True):
+            st.session_state.press_refresh += 1
+            st.rerun()
+    with stcol2:
+        st.session_state.press_sort = st.selectbox(
+            "정렬", ["관련도순","최신순"],
+            index=["관련도순","최신순"].index(st.session_state.press_sort),
+            key="press_sort_sel", label_visibility="collapsed")
+st.markdown('</div>', unsafe_allow_html=True)
+
 with st.spinner("뉴스 로딩 중..."):
-    news_list, news_ts   = fetch_news(news_kw, NEWS_CACHE_KEY)
-    press_list, press_ts = fetch_press(press_kw, NEWS_CACHE_KEY)
+    news_list, news_ts   = fetch_news(news_kw, NEWS_CACHE_KEY, st.session_state.news_refresh)
+    press_list, press_ts = fetch_press(press_kw, NEWS_CACHE_KEY, st.session_state.press_refresh)
+
+if st.session_state.news_sort == "최신순":
+    news_list = sorted(news_list, key=lambda x: x.get("ts",0), reverse=True)
+if st.session_state.press_sort == "최신순":
+    press_list = sorted(press_list, key=lambda x: x.get("ts",0), reverse=True)
+
 nc1,nc2 = st.columns(2)
 with nc1:
-    rows = "".join([f'<div class="news-row"><span class="news-n">{i+1}</span><div><a href="{n["link"]}" target="_blank" class="news-t">{n["title"]}</a><div class="news-src">{n.get("source","")}</div></div></div>' for i,n in enumerate(news_list)]) if news_list else '<div class="no-data">⚠️ 뉴스를 불러오지 못했어요.</div>'
-    st.markdown(f'<div class="card"><div class="card-head">📰 일일 NEWS <span style="margin-left:auto;font-size:.7rem;color:#A0AEC0;font-weight:400">법령/가맹사업</span></div><span class="badge">🕷️ Google News · {news_ts or "미수집"}</span>{rows}</div>', unsafe_allow_html=True)
+    rows = "".join([f'<div class="news-row"><span class="news-n">{i+1}</span><div><a href="{n["link"]}" target="_blank" class="news-t">{n["title"]}</a><div class="news-src">{n.get("source","")} {("· "+n["date"]) if n.get("date") else ""}</div></div></div>' for i,n in enumerate(news_list)]) if news_list else '<div class="no-data">⚠️ 뉴스를 불러오지 못했어요.</div>'
+    st.markdown(f'<div class="card"><div class="card-head">📰 일일 NEWS <span style="margin-left:auto;font-size:.7rem;color:#A0AEC0;font-weight:400">법령/가맹사업</span></div><span class="badge">🕷️ Google News · {news_ts or "미수집"} · {st.session_state.news_sort}</span>{rows}</div>', unsafe_allow_html=True)
 with nc2:
     pr = "".join([f'<div class="press"><div class="press-d">{p.get("date","")} · {p.get("source","")}</div><a href="{p.get("link","#")}" target="_blank" class="press-t">{p.get("title","")}</a></div>' for p in press_list[:5]]) if press_list else '<div class="no-data">⚠️ 보도자료를 불러오지 못했어요.</div>'
-    st.markdown(f'<div class="card"><div class="card-head">📋 공정위/식약처 보도자료 <span style="margin-left:auto;font-size:.7rem;color:#A0AEC0;font-weight:400">업데이트</span></div><span class="badge">🕷️ Google News · {press_ts or "미수집"}</span><div style="margin-top:8px">{pr}</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="card"><div class="card-head">📋 공정위/식약처 보도자료 <span style="margin-left:auto;font-size:.7rem;color:#A0AEC0;font-weight:400">업데이트</span></div><span class="badge">🕷️ Google News · {press_ts or "미수집"} · {st.session_state.press_sort}</span><div style="margin-top:8px">{pr}</div></div>', unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════
 #  6. ③ CP 운영

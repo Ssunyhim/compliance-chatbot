@@ -176,7 +176,7 @@ QUICK_QUESTIONS = [
     ("⚖️", "공정거래법 위반 시 제재는?", "공정거래법 위반 시 제재사항을 알려줘"),
     ("📋", "CP란 무엇인가요?",          "컴플라이언스 프로그램(CP)이 무엇인지 알려줘"),
 ]
-QUICK_REPLIES = ["↺ 처음으로", "CP 교육 일정", "내부신고 절차", "관련 법령 보기"]
+QUICK_REPLIES = ["↺ 처음으로", "CP 교육 일정", "관련 법령 보기"]
 
 @st.cache_resource
 def load_and_chunk():
@@ -698,8 +698,8 @@ st.markdown('</div>', unsafe_allow_html=True)
 # 빠른 답변 버튼
 if bot_replied and not st.session_state.is_typing and st.session_state.history[-1]["role"]=="bot":
     st.markdown('<div class="quick-reply-area">', unsafe_allow_html=True)
-    _, c1, c2, c3, c4, _ = st.columns([0.3,1,1,1,1,0.3])
-    for col, label, i in zip([c1,c2,c3,c4], QUICK_REPLIES, range(4)):
+    _, c1, c2, c3, _ = st.columns([0.5,1,1,1,0.5])
+    for col, label, i in zip([c1,c2,c3], QUICK_REPLIES, range(3)):
         with col:
             if st.button(label, key=f"qr_{i}", use_container_width=True):
                 if "처음으로" in label:

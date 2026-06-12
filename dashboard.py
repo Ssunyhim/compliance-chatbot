@@ -3,7 +3,7 @@
 # ============================================================
 import streamlit as st
 import streamlit.components.v1 as components
-import datetime, json, requests, pandas as pd, time, calendar
+import datetime, json, requests, pandas as pd, time, calendar, base64
 from zoneinfo import ZoneInfo
 
 st.set_page_config(
@@ -146,6 +146,28 @@ with st.sidebar:
         """)
 
 kpi_pct = int(kpi_actual / kpi_goal * 100) if kpi_goal else 0
+
+# 귀여운 크루아상 캐릭터 (파리크라상)
+_MASCOT_SVG_RAW = """<svg width="100%" height="100%" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+<ellipse cx="100" cy="115" rx="78" ry="58" fill="#F0C36A"/>
+<path d="M28 120 Q35 60 100 50 Q165 60 172 120 Q160 145 100 152 Q40 145 28 120 Z" fill="#F6D795"/>
+<path d="M45 100 Q55 75 80 70" stroke="#E0AE56" stroke-width="4" fill="none" stroke-linecap="round"/>
+<path d="M120 70 Q145 75 155 100" stroke="#E0AE56" stroke-width="4" fill="none" stroke-linecap="round"/>
+<path d="M55 130 Q65 110 90 105" stroke="#E0AE56" stroke-width="4" fill="none" stroke-linecap="round"/>
+<path d="M110 105 Q135 110 145 130" stroke="#E0AE56" stroke-width="4" fill="none" stroke-linecap="round"/>
+<circle cx="78" cy="108" r="7" fill="#3A2B1A"/>
+<circle cx="122" cy="108" r="7" fill="#3A2B1A"/>
+<circle cx="80" cy="105" r="2.2" fill="#FFFFFF"/>
+<circle cx="124" cy="105" r="2.2" fill="#FFFFFF"/>
+<ellipse cx="64" cy="124" rx="10" ry="6" fill="#F4A693" opacity="0.55"/>
+<ellipse cx="136" cy="124" rx="10" ry="6" fill="#F4A693" opacity="0.55"/>
+<path d="M82 128 Q100 142 118 128" stroke="#3A2B1A" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+<circle cx="100" cy="156" r="17" fill="#0D3B8E"/>
+<circle cx="100" cy="156" r="17" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+<path d="M92 156 L98 163 L110 147" stroke="#FFFFFF" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>"""
+_mascot_b64 = base64.b64encode(_MASCOT_SVG_RAW.encode("utf-8")).decode("ascii")
+MASCOT_IMG = f'<img src="data:image/svg+xml;base64,{_mascot_b64}" style="width:30px;height:30px;display:block;object-fit:contain;border-radius:6px" alt="mascot"/>'
 
 # 뉴스/보도자료 새로고침 & 정렬 상태
 for k, v in [("news_refresh",0),("press_refresh",0),("news_sort","관련도순"),("press_sort","관련도순")]:
@@ -321,12 +343,13 @@ div[data-testid="stStatusWidget"]{{display:none!important}}
 .badge{{display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:3px 8px;font-size:.63rem;font-weight:600;margin-bottom:8px;background:#FEEBC8;color:#744210}}
 .no-data{{text-align:center;padding:20px;color:#A0AEC0;font-size:.8rem}}
 
-/* 뉴스 툴바 (새로고침/정렬) - 작고 톤앤매너에 맞게 */
+/* 뉴스 툴바 (새로고침/정렬) - 작고 톤앤매너에 맞게, 서로 붙여서 표시 */
 [class*="st-key-news_refresh_btn"] button,
 [class*="st-key-press_refresh_btn"] button {{
     background:#EBF4FF!important;border:1px solid #BEE3F8!important;color:#0D3B8E!important;
     border-radius:6px!important;font-size:.7rem!important;font-weight:700!important;
-    height:30px!important;min-height:30px!important;padding:0 10px!important;
+    font-family:'Noto Sans KR',sans-serif!important;line-height:1!important;
+    height:30px!important;min-height:30px!important;padding:0 8px!important;
     width:auto!important;min-width:0!important;
 }}
 [class*="st-key-news_refresh_btn"] button:hover,
@@ -341,6 +364,12 @@ div[data-testid="stStatusWidget"]{{display:none!important}}
 [class*="st-key-news_sort_sel"] div[data-baseweb="select"] *,
 [class*="st-key-press_sort_sel"] div[data-baseweb="select"] * {{
     color:#0D3B8E!important;font-size:.7rem!important;font-weight:700!important;
+    font-family:'Noto Sans KR',sans-serif!important;line-height:1!important;
+}}
+/* 갱신 버튼과 정렬 드롭다운을 서로 붙여서 표시 */
+div[data-testid="stHorizontalBlock"]:has([class*="st-key-news_refresh_btn"]),
+div[data-testid="stHorizontalBlock"]:has([class*="st-key-press_refresh_btn"]) {{
+    gap:4px!important;
 }}
 [class*="st-key-news_refresh_btn"],[class*="st-key-press_refresh_btn"],
 [class*="st-key-news_sort_sel"],[class*="st-key-press_sort_sel"] {{
@@ -371,7 +400,8 @@ div[data-testid="stStatusWidget"]{{display:none!important}}
 <span class="sec-anchor" id="sec-top"></span>
 <div id="pb-nav" class="dash-nav">
   <div class="nav-left">
-    <span class="nav-title">📊 CP 컴플라이언스 대시보드</span>
+    {MASCOT_IMG}
+    <span class="nav-title">CP 컴플라이언스 대시보드</span>
     <span class="nav-badge">Paris Baguette</span>
   </div>
   <div class="nav-links">

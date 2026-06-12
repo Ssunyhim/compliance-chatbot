@@ -59,17 +59,10 @@ section[data-testid="stMain"]>div{padding:0!important}
 .ci-icon{font-size:.95rem;min-width:20px;margin-top:1px}
 .ci-title{font-size:.83rem;font-weight:600;color:#0B2461;line-height:1.45}
 .ci-desc{font-size:.77rem;color:#4A6899;margin-top:2px;line-height:1.4}
-.card-source{margin-top:9px;padding-top:7px;border-top:1px solid #D4E3F7;font-size:.73rem;color:#0D3188;font-weight:600}
+.card-source{margin-top:9px;padding-top:7px;border-top:1px solid #D4E3F7;font-size:.73rem;color:#0D3188;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.attach-link{background:#EBF4FF;border:1px solid #BEE3F8;color:#0D3B8E;border-radius:6px;padding:3px 10px;font-size:.71rem;font-weight:700;text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
+.attach-link:hover{background:#0D3B8E;color:#fff;border-color:#0D3B8E}
 .card-disclaimer{margin-top:8px;padding:7px 10px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;font-size:.71rem;color:#9A3412;font-weight:600;display:flex;align-items:center;gap:6px}
-.attach-wrap{margin:4px 0 6px 45px}
-.attach-wrap .stDownloadButton button{
-    background:#EBF4FF!important;border:1.5px solid #BEE3F8!important;color:#0D3B8E!important;
-    border-radius:8px!important;font-size:.78rem!important;font-weight:700!important;
-    padding:6px 14px!important;height:auto!important;
-}
-.attach-wrap .stDownloadButton button:hover{
-    background:#0D3B8E!important;color:#fff!important;border-color:#0D3B8E!important;
-}
 
 /* 피드백 버튼 - 한글 텍스트, 작고 연한 스타일 */
 [class*="st-key-like_"] button,
@@ -285,12 +278,26 @@ def needs_attachment(text):
 
 @st.cache_resource(show_spinner=False)
 def get_attachment_bytes():
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ATTACHMENT_FILE)
+    folder = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(folder, ATTACHMENT_FILE)
     try:
         with open(path, "rb") as f:
             return f.read()
     except Exception:
         return None
+
+@st.cache_resource(show_spinner=False)
+def get_attachment_b64():
+    data = get_attachment_bytes()
+    return base64.b64encode(data).decode("ascii") if data else None
+
+def get_folder_files():
+    """진단용: 현재 폴더의 파일 목록 (xlsx만)"""
+    folder = os.path.dirname(os.path.abspath(__file__))
+    try:
+        return [f for f in os.listdir(folder) if f.lower().endswith((".xlsx",".xls"))]
+    except Exception:
+        return []
 
 def get_relevant_chunks(query, top_k=20):
     """RAG: 약어 확장 + n-gram 키워드 매칭"""
@@ -369,8 +376,18 @@ def ask_chatbot(question):
     except Exception as e:
         return json.dumps({"summary":"🔧 [진단] 예외 발생","items":[{"icon":"⚠️","title":"오류 종류","desc":f"{type(e).__name__}: {str(e)[:300]}"}],"source":None}, ensure_ascii=False)
 
-def parse_response(raw):
+def parse_response(raw, attachment=False):
     DISCLAIMER = '<div class="card-disclaimer">⚠️ 최종 법적 판단은 반드시 법무팀에 문의하세요.</div>'
+
+    attach_html = ""
+    if attachment:
+        b64 = get_attachment_b64()
+        if b64:
+            attach_html = (
+                f'<a class="attach-link" href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" '
+                f'download="{ATTACHMENT_FILE}">📎 손해액 산정 엑셀</a>'
+            )
+
     clean = raw.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
     try:
         data = json.loads(clean)
@@ -380,13 +397,16 @@ def parse_response(raw):
         for item in data.get("items",[]):
             icon,title,desc = item.get("icon","▪"),item.get("title",""),item.get("desc","")
             html += f'<div class="card-item"><span class="ci-icon">{icon}</span><div><div class="ci-title">{title}</div>{"<div class=\"ci-desc\">"+desc+"</div>" if desc else ""}</div></div>'
-        if data.get("source"):
-            html += f'<div class="card-source">📄 출처: {data["source"]}</div>'
+        if data.get("source") or attach_html:
+            src_text = f'📄 출처: {data["source"]}' if data.get("source") else ""
+            html += f'<div class="card-source"><span>{src_text}</span>{attach_html}</div>'
         html += DISCLAIMER
         return html
     except Exception:
         lines = [l.strip() for l in raw.strip().splitlines() if l.strip()]
         body = "".join(f'<div class="card-item"><span class="ci-icon">▪</span><div class="ci-title">{l}</div></div>' for l in lines) or f'<div style="font-size:.88rem;line-height:1.7;color:#1A2B5F">{raw}</div>'
+        if attach_html:
+            body += f'<div class="card-source"><span></span>{attach_html}</div>'
         return body + DISCLAIMER
 
 def log_audit(question, resp_time):
@@ -731,23 +751,21 @@ for i, msg in enumerate(st.session_state.history):
         st.markdown(f"""
         <div class="bot-row">
           <div class="bot-avatar">👾</div>
-          <div class="bot-bubble">{parse_response(msg["content"])}</div>
+          <div class="bot-bubble">{parse_response(msg["content"], msg.get("attachment", False))}</div>
         </div>
         <div class="msg-time">{msg_time}</div>
         """.replace("👾", MASCOT_SVG), unsafe_allow_html=True)
 
-        if msg.get("attachment"):
-            _xlsx = get_attachment_bytes()
-            if _xlsx:
-                st.markdown('<div class="attach-wrap">', unsafe_allow_html=True)
-                st.download_button(
-                    "📎 손해액 산정 엑셀 다운로드",
-                    data=_xlsx,
-                    file_name=ATTACHMENT_FILE,
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    key=f"attach_{i}",
-                )
-                st.markdown('</div>', unsafe_allow_html=True)
+        if msg.get("attachment") and not get_attachment_b64():
+            found = get_folder_files()
+            st.markdown(
+                '<div style="margin:4px 0 6px 45px;font-size:.74rem;color:#9A3412;background:#FFF7ED;'
+                'border:1px solid #FED7AA;border-radius:8px;padding:8px 12px">'
+                '⚠️ 첨부 엑셀 파일을 찾을 수 없어요. 파일이 GitHub 저장소(app.py와 같은 폴더)에 '
+                '업로드되어 있는지 확인해주세요.<br>'
+                f'기대한 파일명: <code>{ATTACHMENT_FILE}</code><br>'
+                f'폴더에서 발견된 xlsx 파일: {found if found else "없음"}'
+                '</div>', unsafe_allow_html=True)
 
         # 피드백 버튼 (한글 텍스트)
 

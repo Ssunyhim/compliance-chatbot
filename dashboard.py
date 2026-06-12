@@ -210,6 +210,8 @@ div[data-testid="stStatusWidget"]{{display:none!important}}
 .nav-links{{display:flex;gap:2px}}
 .nav-btn{{background:transparent;border:none;color:rgba(255,255,255,.7);padding:7px 14px;border-radius:6px;font-size:.76rem;font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .15s;white-space:nowrap;text-decoration:none;display:inline-block}}
 .nav-btn:hover{{background:rgba(255,255,255,.15);color:white}}
+.nav-settings{{background:#FFD700!important;color:#0B2461!important;font-weight:800!important;border-radius:6px!important;}}
+.nav-settings:hover{{background:#FFC400!important;color:#0B2461!important}}
 .nav-date{{color:rgba(255,255,255,.55);font-size:.7rem;white-space:nowrap}}
 
 /* 네비가 가리는 만큼 본문 위쪽 여백 */
@@ -279,6 +281,17 @@ div[data-testid="stStatusWidget"]{{display:none!important}}
     <span class="nav-badge">Paris Baguette</span>
   </div>
   <div class="nav-links">
+    <a class="nav-btn nav-settings" href="#" onclick="
+      var d=document;
+      var b=d.querySelector('[data-testid=&quot;collapsedControl&quot;] button')
+         || d.querySelector('[data-testid=&quot;collapsedControl&quot;]')
+         || d.querySelector('[data-testid=&quot;stSidebarCollapseButton&quot;] button')
+         || d.querySelector('section[data-testid=&quot;stSidebar&quot;] button[kind=&quot;header&quot;]')
+         || d.querySelector('button[aria-label*=&quot;sidebar&quot;]')
+         || d.querySelector('button[title*=&quot;sidebar&quot;]');
+      if(b){{b.click();}}
+      return false;
+    ">⚙️ 설정 열기/닫기</a>
     <a class="nav-btn" href="#sec-overview">📈 전체 현황</a>
     <a class="nav-btn" href="#sec-news">📰 일일 뉴스</a>
     <a class="nav-btn" href="#sec-cp">📊 CP 운영</a>

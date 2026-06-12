@@ -148,10 +148,19 @@ with st.sidebar:
 kpi_pct = int(kpi_actual / kpi_goal * 100) if kpi_goal else 0
 
 # ══════════════════════════════════════════════════════════════
-#  2. 데이터 로딩
+#  2. 데이터 로딩 — 매일 오전 10시(KST) 기준 갱신
 # ══════════════════════════════════════════════════════════════
-@st.cache_data(ttl=7*24*3600, show_spinner=False)
-def fetch_news(keyword):
+def get_news_cache_key():
+    """오전 10시 이전이면 전날 날짜, 이후면 당일 날짜를 캐시 키로 반환"""
+    cutoff = NOW.replace(hour=10, minute=0, second=0, microsecond=0)
+    ref = NOW if NOW >= cutoff else NOW - datetime.timedelta(days=1)
+    return ref.strftime("%Y-%m-%d")
+
+NEWS_CACHE_KEY = get_news_cache_key()
+NEWS_UPDATE_LABEL = f"{NEWS_CACHE_KEY} 10:00 기준"
+
+@st.cache_data(ttl=25*3600, show_spinner=False)
+def fetch_news(keyword, cache_key):
     try:
         import feedparser
         q = requests.utils.quote(keyword)
@@ -160,11 +169,11 @@ def fetch_news(keyword):
         for e in feed.entries[:6]:
             t = e.get("title",""); p = t.rsplit(" - ",1)
             res.append({"title":p[0].strip(),"link":e.get("link","#"),"source":p[1].strip() if len(p)>1 else ""})
-        return res, NOW.strftime("%H:%M")
+        return res, NEWS_UPDATE_LABEL
     except: return [], None
 
-@st.cache_data(ttl=7*24*3600, show_spinner=False)
-def fetch_press(keyword):
+@st.cache_data(ttl=25*3600, show_spinner=False)
+def fetch_press(keyword, cache_key):
     try:
         import feedparser
         res = []
@@ -173,7 +182,7 @@ def fetch_press(keyword):
             for e in feed.entries[:3]:
                 t = e.get("title","").rsplit(" - ",1)[0].strip()
                 res.append({"title":t,"link":e.get("link","#"),"date":e.get("published","")[:10],"source":src})
-        return res, NOW.strftime("%H:%M")
+        return res, NEWS_UPDATE_LABEL
     except: return [], None
 
 @st.cache_data(ttl=3600, show_spinner=False)
@@ -401,8 +410,8 @@ for col,lbl,val,unit,sub,cls,color,pct in [
 # ══════════════════════════════════════════════════════════════
 st.markdown('<span class="sec-anchor" id="sec-news"></span><div class="sec-title">📰 일일 뉴스 · 보도자료</div>', unsafe_allow_html=True)
 with st.spinner("뉴스 로딩 중..."):
-    news_list, news_ts   = fetch_news(news_kw)
-    press_list, press_ts = fetch_press(press_kw)
+    news_list, news_ts   = fetch_news(news_kw, NEWS_CACHE_KEY)
+    press_list, press_ts = fetch_press(press_kw, NEWS_CACHE_KEY)
 nc1,nc2 = st.columns(2)
 with nc1:
     rows = "".join([f'<div class="news-row"><span class="news-n">{i+1}</span><div><a href="{n["link"]}" target="_blank" class="news-t">{n["title"]}</a><div class="news-src">{n.get("source","")}</div></div></div>' for i,n in enumerate(news_list)]) if news_list else '<div class="no-data">⚠️ 뉴스를 불러오지 못했어요.</div>'

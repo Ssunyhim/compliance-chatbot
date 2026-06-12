@@ -32,6 +32,42 @@ with st.sidebar:
     section[data-testid="stSidebar"] .stNumberInput input { color:#1A2B5F !important; background:white !important; border:1.5px solid #BEE3F8 !important; border-radius:6px !important; }
     section[data-testid="stSidebar"] .stTextInput input { color:#1A2B5F !important; background:white !important; border:1.5px solid #BEE3F8 !important; border-radius:6px !important; }
     section[data-testid="stSidebar"] .stButton button { background:#0D3B8E !important; color:white !important; border:none !important; border-radius:8px !important; font-weight:600 !important; }
+    section[data-testid="stSidebar"] .stButton button p { color:white !important; }
+
+    /* expander (📌 구글 시트 설정 방법) */
+    section[data-testid="stSidebar"] .stExpander details summary {
+        background:#EBF4FF !important;
+        border:1.5px solid #BEE3F8 !important;
+        border-radius:8px !important;
+        padding:8px 12px !important;
+    }
+    section[data-testid="stSidebar"] .stExpander details summary p,
+    section[data-testid="stSidebar"] .stExpander details summary span {
+        color:#0D3B8E !important;
+        font-weight:700 !important;
+    }
+    section[data-testid="stSidebar"] .stExpander [data-testid="stExpanderToggleIcon"] {
+        color:#0D3B8E !important;
+    }
+    section[data-testid="stSidebar"] .stExpander details[open] summary {
+        border-radius:8px 8px 0 0 !important;
+    }
+    section[data-testid="stSidebar"] .stExpander details > div {
+        background:white !important;
+        border:1.5px solid #BEE3F8 !important;
+        border-top:none !important;
+        border-radius:0 0 8px 8px !important;
+        padding:10px 12px !important;
+    }
+    section[data-testid="stSidebar"] .stExpander details > div p,
+    section[data-testid="stSidebar"] .stExpander details > div li {
+        color:#1A2B5F !important;
+        font-size:.78rem !important;
+    }
+    section[data-testid="stSidebar"] .stExpander details > div code {
+        color:#0D3B8E !important;
+        background:#EBF4FF !important;
+    }
     section[data-testid="stSidebar"] [data-testid="stSidebarNav"] { display:none !important; }
 
     /* ── 사이드바 접기/펼치기 버튼 ── */

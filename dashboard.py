@@ -281,17 +281,7 @@ div[data-testid="stStatusWidget"]{{display:none!important}}
     <span class="nav-badge">Paris Baguette</span>
   </div>
   <div class="nav-links">
-    <a class="nav-btn nav-settings" href="#" onclick="
-      var d=document;
-      var b=d.querySelector('[data-testid=&quot;collapsedControl&quot;] button')
-         || d.querySelector('[data-testid=&quot;collapsedControl&quot;]')
-         || d.querySelector('[data-testid=&quot;stSidebarCollapseButton&quot;] button')
-         || d.querySelector('section[data-testid=&quot;stSidebar&quot;] button[kind=&quot;header&quot;]')
-         || d.querySelector('button[aria-label*=&quot;sidebar&quot;]')
-         || d.querySelector('button[title*=&quot;sidebar&quot;]');
-      if(b){{b.click();}}
-      return false;
-    ">⚙️ 설정 열기/닫기</a>
+    <a class="nav-btn nav-settings" href="#" id="pb-settings-btn">⚙️ 설정 열기/닫기</a>
     <a class="nav-btn" href="#sec-overview">📈 전체 현황</a>
     <a class="nav-btn" href="#sec-news">📰 일일 뉴스</a>
     <a class="nav-btn" href="#sec-cp">📊 CP 운영</a>
@@ -304,14 +294,34 @@ div[data-testid="stStatusWidget"]{{display:none!important}}
 <div class="nav-spacer"></div>
 """, unsafe_allow_html=True)
 
-# 네비를 진짜 body 최상위로 이동시켜 어떤 부모의 overflow에도 영향받지 않게 함
+# 네비를 진짜 body 최상위로 이동 + 설정버튼 클릭 핸들러 연결
 components.html("""
 <script>
 (function(){
     var doc = window.parent.document;
     var nav = doc.getElementById('pb-nav');
-    if (nav && nav.parentElement !== doc.body) {
+    if (!nav) return;
+
+    if (nav.parentElement !== doc.body) {
+        // 이전에 옮겨진 중복 nav 제거
+        var olds = doc.body.querySelectorAll('#pb-nav');
+        olds.forEach(function(el){ if(el !== nav) el.remove(); });
         doc.body.insertBefore(nav, doc.body.firstChild);
+    }
+
+    // 설정(사이드바 토글) 버튼 클릭 핸들러
+    var btn = nav.querySelector('#pb-settings-btn');
+    if (btn) {
+        btn.onclick = function(e){
+            e.preventDefault();
+            var b = doc.querySelector('[data-testid="collapsedControl"] button')
+                 || doc.querySelector('[data-testid="collapsedControl"]')
+                 || doc.querySelector('[data-testid="stSidebarCollapseButton"] button')
+                 || doc.querySelector('section[data-testid="stSidebar"] button[kind="header"]')
+                 || doc.querySelector('button[aria-label*="sidebar" i]')
+                 || doc.querySelector('button[title*="sidebar" i]');
+            if (b) b.click();
+        };
     }
 })();
 </script>

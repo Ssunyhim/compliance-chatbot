@@ -61,6 +61,15 @@ section[data-testid="stMain"]>div{padding:0!important}
 .ci-desc{font-size:.77rem;color:#4A6899;margin-top:2px;line-height:1.4}
 .card-source{margin-top:9px;padding-top:7px;border-top:1px solid #D4E3F7;font-size:.73rem;color:#0D3188;font-weight:600}
 .card-disclaimer{margin-top:8px;padding:7px 10px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;font-size:.71rem;color:#9A3412;font-weight:600;display:flex;align-items:center;gap:6px}
+.attach-wrap{margin:4px 0 6px 45px}
+.attach-wrap .stDownloadButton button{
+    background:#EBF4FF!important;border:1.5px solid #BEE3F8!important;color:#0D3B8E!important;
+    border-radius:8px!important;font-size:.78rem!important;font-weight:700!important;
+    padding:6px 14px!important;height:auto!important;
+}
+.attach-wrap .stDownloadButton button:hover{
+    background:#0D3B8E!important;color:#fff!important;border-color:#0D3B8E!important;
+}
 
 /* 피드백 버튼 - 한글 텍스트, 작고 연한 스타일 */
 [class*="st-key-like_"] button,
@@ -263,7 +272,25 @@ ABBR_MAP = {
     "가맹법": "가맹사업법 가맹거래법",
     "내부신고": "내부신고 공익신고 신고채널 신고센터",
     "제재": "제재 처벌 과징금 시정조치 형사고발",
+    "위약금": "위약금 손해배상액 계약해지 산정",
+    "손해액": "손해액 산정 손해배상액 무단폐점",
 }
+
+# ── 첨부파일 자동 안내 설정 ──
+ATTACHMENT_FILE = "[컴플FAQ Q3.답변첨부파일]무단폐점 점포로 인한 가맹본부의 손해액 산정 방법.xlsx"
+ATTACHMENT_KEYWORDS = ["손해액", "위약금", "무단폐점", "손해배상", "산정 방법", "산정방법"]
+
+def needs_attachment(text):
+    return any(k in text for k in ATTACHMENT_KEYWORDS)
+
+@st.cache_resource(show_spinner=False)
+def get_attachment_bytes():
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ATTACHMENT_FILE)
+    try:
+        with open(path, "rb") as f:
+            return f.read()
+    except Exception:
+        return None
 
 def get_relevant_chunks(query, top_k=20):
     """RAG: 약어 확장 + n-gram 키워드 매칭"""
@@ -709,6 +736,19 @@ for i, msg in enumerate(st.session_state.history):
         <div class="msg-time">{msg_time}</div>
         """.replace("👾", MASCOT_SVG), unsafe_allow_html=True)
 
+        if msg.get("attachment"):
+            _xlsx = get_attachment_bytes()
+            if _xlsx:
+                st.markdown('<div class="attach-wrap">', unsafe_allow_html=True)
+                st.download_button(
+                    "📎 손해액 산정 엑셀 다운로드",
+                    data=_xlsx,
+                    file_name=ATTACHMENT_FILE,
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key=f"attach_{i}",
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+
         # 피드백 버튼 (한글 텍스트)
 
 
@@ -790,6 +830,7 @@ if st.session_state.is_typing:
             "role": "bot",
             "content": answer,
             "time": datetime.datetime.now(ZoneInfo("Asia/Seoul")).strftime("%H:%M"),
+            "attachment": needs_attachment(last_q),
         })
         log_audit(last_q, resp_time)
     st.session_state.is_typing = False

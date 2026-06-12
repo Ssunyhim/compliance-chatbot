@@ -502,7 +502,7 @@ with nc1:
     _, grp1 = st.columns([2.4,1.6])
     b1, s1 = grp1.columns([1,1.5], gap="small")
     with b1:
-        if st.button("갱신", key="news_refresh_btn", use_container_width=True):
+        if st.button("업데이트", key="news_refresh_btn", use_container_width=True):
             st.session_state.news_refresh += 1
             st.rerun()
     with s1:
@@ -516,7 +516,7 @@ with nc2:
     _, grp2 = st.columns([2.4,1.6])
     b2, s2 = grp2.columns([1,1.5], gap="small")
     with b2:
-        if st.button("갱신", key="press_refresh_btn", use_container_width=True):
+        if st.button("업데이트", key="press_refresh_btn", use_container_width=True):
             st.session_state.press_refresh += 1
             st.rerun()
     with s2:

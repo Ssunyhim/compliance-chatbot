@@ -164,26 +164,16 @@ div[data-testid="stStatusWidget"]{{display:none!important}}
 /* ── 핵심: stMain을 overflow visible로 해서 fixed 가능하게 ── */
 /* 기본 Streamlit 스크롤 유지 - overflow 건드리지 않음 */
 
-/* ── 고정 네비 ── */
+/* ── 상단 네비 (sticky - 스크롤 영역 안에서 고정) ── */
 .dash-nav{{
-    position:fixed!important;top:0!important;
-    right:0!important;
-    left:var(--sidebar-width, 0px)!important;
-    z-index:998!important;
+    position:sticky!important;top:0!important;
+    z-index:10!important;
     background:linear-gradient(135deg,#061B4A 0%,#0D3B8E 60%,#1A56C4 100%)!important;
     padding:0 24px!important;
     display:flex!important;align-items:center!important;justify-content:space-between!important;
     height:52px!important;
     box-shadow:0 2px 12px rgba(6,27,74,.3)!important;
-}}
-/* 사이드바 열기/닫기 화살표 버튼이 네비 위로 보이도록 */
-[data-testid="collapsedControl"]{{
-    z-index:999999!important;
-    position:fixed!important;
-    top:6px!important;
-}}
-button[kind="header"]{{
-    z-index:999999!important;
+    margin:0 -24px 16px -24px!important;
 }}
 .nav-left{{display:flex;align-items:center;gap:12px}}
 .nav-title{{color:white;font-size:1rem;font-weight:800}}
@@ -244,11 +234,13 @@ button[kind="header"]{{
 .tl-dot{{width:6px;height:6px;background:#0D3B8E;border-radius:50%;margin-top:4px;flex-shrink:0}}
 .tl-text{{font-size:.74rem;color:#2D3748;line-height:1.4}}
 .tl-sec{{font-size:.74rem;font-weight:700;color:#4A5568;border-bottom:2px solid #E2E8F0;padding-bottom:5px;margin-bottom:8px}}
-.top-btn{{position:fixed;bottom:28px;right:18px;width:40px;height:40px;background:linear-gradient(135deg,#0B2461,#1A56C4);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.1rem;font-weight:700;box-shadow:0 3px 14px rgba(13,59,142,.4);cursor:pointer;border:none;z-index:9998;text-decoration:none}}
+.nav-top{{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:white;padding:6px 12px;border-radius:6px;font-size:.76rem;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;margin-left:8px;text-decoration:none;white-space:nowrap}}
+.nav-top:hover{{background:rgba(255,255,255,.22)}}
 @media(max-width:900px){{.nav-links{{display:none}}}}
 </style>
 
-<!-- 고정 네비 -->
+<!-- 고정(sticky) 네비 -->
+<span class="sec-anchor" id="sec-top"></span>
 <div class="dash-nav">
   <div class="nav-left">
     <span class="nav-title">📊 CP 컴플라이언스 대시보드</span>
@@ -260,15 +252,10 @@ button[kind="header"]{{
     <a class="nav-btn" href="#sec-cp">📊 CP 운영</a>
     <a class="nav-btn" href="#sec-chart">🔍 차트 분석</a>
     <a class="nav-btn" href="#sec-tl">🗓️ 타임라인</a>
+    <a class="nav-top" href="#sec-top">↑ TOP</a>
   </div>
   <span class="nav-date">📅 {TODAY} · 4월 기준</span>
 </div>
-<button class="top-btn" onclick="
-    var mainEl = window.parent.document.querySelector('section[data-testid=\\'stMain\\']');
-    if(mainEl) mainEl.scrollTo({{top:0,behavior:'smooth'}});
-    window.scrollTo({{top:0,behavior:'smooth'}});
-    document.documentElement.scrollTo({{top:0,behavior:'smooth'}});
-">↑</button>
 """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════

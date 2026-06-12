@@ -169,12 +169,21 @@ div[data-testid="stStatusWidget"]{{display:none!important}}
     position:fixed!important;top:0!important;
     right:0!important;
     left:var(--sidebar-width, 0px)!important;
-    z-index:99999!important;
+    z-index:998!important;
     background:linear-gradient(135deg,#061B4A 0%,#0D3B8E 60%,#1A56C4 100%)!important;
     padding:0 24px!important;
     display:flex!important;align-items:center!important;justify-content:space-between!important;
     height:52px!important;
     box-shadow:0 2px 12px rgba(6,27,74,.3)!important;
+}}
+/* 사이드바 열기/닫기 화살표 버튼이 네비 위로 보이도록 */
+[data-testid="collapsedControl"]{{
+    z-index:999999!important;
+    position:fixed!important;
+    top:6px!important;
+}}
+button[kind="header"]{{
+    z-index:999999!important;
 }}
 .nav-left{{display:flex;align-items:center;gap:12px}}
 .nav-title{{color:white;font-size:1rem;font-weight:800}}
@@ -254,7 +263,12 @@ div[data-testid="stStatusWidget"]{{display:none!important}}
   </div>
   <span class="nav-date">📅 {TODAY} · 4월 기준</span>
 </div>
-<button class="top-btn" onclick="window.scrollTo({{top:0,behavior:'smooth'}})">↑</button>
+<button class="top-btn" onclick="
+    var mainEl = window.parent.document.querySelector('section[data-testid=\\'stMain\\']');
+    if(mainEl) mainEl.scrollTo({{top:0,behavior:'smooth'}});
+    window.scrollTo({{top:0,behavior:'smooth'}});
+    document.documentElement.scrollTo({{top:0,behavior:'smooth'}});
+">↑</button>
 """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════

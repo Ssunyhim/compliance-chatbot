@@ -60,6 +60,7 @@ section[data-testid="stMain"]>div{padding:0!important}
 .ci-title{font-size:.83rem;font-weight:600;color:#0B2461;line-height:1.45}
 .ci-desc{font-size:.77rem;color:#4A6899;margin-top:2px;line-height:1.4}
 .card-source{margin-top:9px;padding-top:7px;border-top:1px solid #D4E3F7;font-size:.73rem;color:#0D3188;font-weight:600}
+.card-disclaimer{margin-top:8px;padding:7px 10px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;font-size:.71rem;color:#9A3412;font-weight:600;display:flex;align-items:center;gap:6px}
 
 /* 피드백 버튼 - 한글 텍스트, 작고 연한 스타일 */
 [class*="st-key-like_"] button,
@@ -342,6 +343,7 @@ def ask_chatbot(question):
         return json.dumps({"summary":"🔧 [진단] 예외 발생","items":[{"icon":"⚠️","title":"오류 종류","desc":f"{type(e).__name__}: {str(e)[:300]}"}],"source":None}, ensure_ascii=False)
 
 def parse_response(raw):
+    DISCLAIMER = '<div class="card-disclaimer">⚠️ 최종 법적 판단은 반드시 법무팀에 문의하세요.</div>'
     clean = raw.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
     try:
         data = json.loads(clean)
@@ -353,10 +355,12 @@ def parse_response(raw):
             html += f'<div class="card-item"><span class="ci-icon">{icon}</span><div><div class="ci-title">{title}</div>{"<div class=\"ci-desc\">"+desc+"</div>" if desc else ""}</div></div>'
         if data.get("source"):
             html += f'<div class="card-source">📄 출처: {data["source"]}</div>'
+        html += DISCLAIMER
         return html
     except Exception:
         lines = [l.strip() for l in raw.strip().splitlines() if l.strip()]
-        return "".join(f'<div class="card-item"><span class="ci-icon">▪</span><div class="ci-title">{l}</div></div>' for l in lines) or f'<div style="font-size:.88rem;line-height:1.7;color:#1A2B5F">{raw}</div>'
+        body = "".join(f'<div class="card-item"><span class="ci-icon">▪</span><div class="ci-title">{l}</div></div>' for l in lines) or f'<div style="font-size:.88rem;line-height:1.7;color:#1A2B5F">{raw}</div>'
+        return body + DISCLAIMER
 
 def log_audit(question, resp_time):
     st.session_state.audit_log.append({

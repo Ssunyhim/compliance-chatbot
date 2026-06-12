@@ -6,7 +6,7 @@ import os, time, json, requests, datetime, threading
 from zoneinfo import ZoneInfo
 import streamlit as st
 
-st.set_page_config(page_title="파리크라상 컴플라이언스 가이드", page_icon="🤖", layout="centered")
+st.set_page_config(page_title="파리크라상 컴플라이언스 가이드", page_icon="👾", layout="centered")
 
 # ══════════════════════════════════════════════════════════════
 #  공통 CSS
@@ -362,7 +362,7 @@ if not st.session_state.logged_in:
     <div class="login-outer">
       <div class="login-card">
         <div class="login-logo-area">
-          <div style="font-size:2.5rem">🤖</div>
+          <div style="font-size:2.5rem">👾</div>
           <h1>파리크라상 컴플라이언스 가이드</h1>
           <p>사내 CP 자료 기반 &nbsp;·&nbsp; 임직원 전용</p>
         </div>
@@ -615,7 +615,7 @@ if st.session_state.is_admin:
 st.markdown(f"""
 <div class="pb-header">
   <div class="pb-header-inner">
-    <div class="pb-icon-box">🤖</div>
+    <div class="pb-icon-box">👾</div>
     <div class="pb-header-texts">
       <div class="pb-title">컴플라이언스 FAQ 도우미</div>
       <div class="pb-sub">사내 CP 자료 기반 &nbsp;·&nbsp; 임직원 전용</div>
@@ -649,7 +649,7 @@ st.markdown(f'<div class="date-badge-wrap"><span class="date-badge">{TODAY_STR}<
 if not bot_replied:
     st.markdown(f"""
     <div class="bot-row">
-      <div class="bot-avatar">🤖</div>
+      <div class="bot-avatar">👾</div>
       <div class="bot-bubble">
         <div class="welcome-text">안녕하세요! 파리크라상 컴플라이언스 가이드입니다.<br>궁금한 점을 질문해 주세요.</div>
       </div>
@@ -672,7 +672,7 @@ for i, msg in enumerate(st.session_state.history):
     else:
         st.markdown(f"""
         <div class="bot-row">
-          <div class="bot-avatar">🤖</div>
+          <div class="bot-avatar">👾</div>
           <div class="bot-bubble">{parse_response(msg["content"])}</div>
         </div>
         <div class="msg-time">{msg_time}</div>
@@ -685,7 +685,7 @@ for i, msg in enumerate(st.session_state.history):
 if st.session_state.is_typing:
     st.markdown("""
     <div class="bot-row">
-      <div class="bot-avatar">🤖</div>
+      <div class="bot-avatar">👾</div>
       <div class="typing-bubble">
         <span class="typing-text">답변 생성 중</span>
         <span class="dot"></span><span class="dot"></span><span class="dot"></span>

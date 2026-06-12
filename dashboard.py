@@ -33,6 +33,35 @@ with st.sidebar:
     section[data-testid="stSidebar"] .stTextInput input { color:#1A2B5F !important; background:white !important; border:1.5px solid #BEE3F8 !important; border-radius:6px !important; }
     section[data-testid="stSidebar"] .stButton button { background:#0D3B8E !important; color:white !important; border:none !important; border-radius:8px !important; font-weight:600 !important; }
     section[data-testid="stSidebar"] [data-testid="stSidebarNav"] { display:none !important; }
+
+    /* ── 사이드바 접기/펼치기 버튼 ── */
+    /* 펼쳐진 상태: 사이드바 헤더의 << 버튼 */
+    [data-testid="stSidebarCollapseButton"] button,
+    section[data-testid="stSidebar"] button[kind="header"] {
+        background:#EBF4FF !important;
+        border:1.5px solid #BEE3F8 !important;
+        border-radius:8px !important;
+        z-index:1000000 !important;
+    }
+    [data-testid="stSidebarCollapseButton"] button svg,
+    section[data-testid="stSidebar"] button[kind="header"] svg {
+        fill:#0D3B8E !important;
+        color:#0D3B8E !important;
+    }
+    /* 접힌 상태: 화면 좌측 상단 > 버튼 */
+    [data-testid="collapsedControl"] {
+        z-index:1000000 !important;
+        background:#0D3B8E !important;
+        border-radius:8px !important;
+        box-shadow:0 2px 8px rgba(13,59,142,.35) !important;
+    }
+    [data-testid="collapsedControl"] svg {
+        fill:white !important;
+        color:white !important;
+    }
+    [data-testid="collapsedControl"]:hover {
+        background:#1A56C4 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 

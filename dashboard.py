@@ -343,14 +343,14 @@ div[data-testid="stStatusWidget"]{{display:none!important}}
 .badge{{display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:3px 8px;font-size:.63rem;font-weight:600;margin-bottom:8px;background:#FEEBC8;color:#744210}}
 .no-data{{text-align:center;padding:20px;color:#A0AEC0;font-size:.8rem}}
 
-/* 뉴스 툴바 (새로고침/정렬) - 작고 톤앤매너에 맞게, 서로 붙여서 표시 */
+/* 뉴스 툴바 (갱신/정렬) - 정렬 드롭다운과 동일한 크기/폰트 */
 [class*="st-key-news_refresh_btn"] button,
 [class*="st-key-press_refresh_btn"] button {{
     background:#EBF4FF!important;border:1px solid #BEE3F8!important;color:#0D3B8E!important;
-    border-radius:6px!important;font-size:.7rem!important;font-weight:700!important;
+    border-radius:6px!important;font-size:.68rem!important;font-weight:700!important;
     font-family:'Noto Sans KR',sans-serif!important;line-height:1!important;
-    height:30px!important;min-height:30px!important;padding:0 8px!important;
-    width:auto!important;min-width:0!important;
+    height:30px!important;min-height:30px!important;padding:0 6px!important;
+    width:100%!important;min-width:0!important;
 }}
 [class*="st-key-news_refresh_btn"] button:hover,
 [class*="st-key-press_refresh_btn"] button:hover {{
@@ -363,13 +363,8 @@ div[data-testid="stStatusWidget"]{{display:none!important}}
 }}
 [class*="st-key-news_sort_sel"] div[data-baseweb="select"] *,
 [class*="st-key-press_sort_sel"] div[data-baseweb="select"] * {{
-    color:#0D3B8E!important;font-size:.7rem!important;font-weight:700!important;
+    color:#0D3B8E!important;font-size:.68rem!important;font-weight:700!important;
     font-family:'Noto Sans KR',sans-serif!important;line-height:1!important;
-}}
-/* 갱신 버튼과 정렬 드롭다운을 서로 붙여서 표시 */
-div[data-testid="stHorizontalBlock"]:has([class*="st-key-news_refresh_btn"]),
-div[data-testid="stHorizontalBlock"]:has([class*="st-key-press_refresh_btn"]) {{
-    gap:4px!important;
 }}
 [class*="st-key-news_refresh_btn"],[class*="st-key-press_refresh_btn"],
 [class*="st-key-news_sort_sel"],[class*="st-key-press_sort_sel"] {{
@@ -500,9 +495,10 @@ if st.session_state.press_sort == "최신순":
 
 nc1,nc2 = st.columns(2)
 with nc1:
-    _, b1, s1 = st.columns([2.6,1,1.1])
+    _, grp1 = st.columns([2.4,1.6])
+    b1, s1 = grp1.columns([1,1.5], gap="small")
     with b1:
-        if st.button("🔄 갱신", key="news_refresh_btn", use_container_width=True):
+        if st.button("갱신", key="news_refresh_btn", use_container_width=True):
             st.session_state.news_refresh += 1
             st.rerun()
     with s1:
@@ -513,9 +509,10 @@ with nc1:
     rows = "".join([f'<div class="news-row"><span class="news-n">{i+1}</span><div><a href="{n["link"]}" target="_blank" class="news-t">{n["title"]}</a><div class="news-src">{n.get("source","")} {("· "+n["date"]) if n.get("date") else ""}</div></div></div>' for i,n in enumerate(news_list)]) if news_list else '<div class="no-data">⚠️ 뉴스를 불러오지 못했어요.</div>'
     st.markdown(f'<div class="card"><div class="card-head">📰 일일 NEWS <span style="margin-left:auto;font-size:.7rem;color:#A0AEC0;font-weight:400">법령/가맹사업</span></div><span class="badge">🕷️ Google News · {news_ts or "미수집"} · {st.session_state.news_sort}</span>{rows}</div>', unsafe_allow_html=True)
 with nc2:
-    _, b2, s2 = st.columns([2.6,1,1.1])
+    _, grp2 = st.columns([2.4,1.6])
+    b2, s2 = grp2.columns([1,1.5], gap="small")
     with b2:
-        if st.button("🔄 갱신", key="press_refresh_btn", use_container_width=True):
+        if st.button("갱신", key="press_refresh_btn", use_container_width=True):
             st.session_state.press_refresh += 1
             st.rerun()
     with s2:

@@ -321,19 +321,31 @@ div[data-testid="stStatusWidget"]{{display:none!important}}
 .badge{{display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:3px 8px;font-size:.63rem;font-weight:600;margin-bottom:8px;background:#FEEBC8;color:#744210}}
 .no-data{{text-align:center;padding:20px;color:#A0AEC0;font-size:.8rem}}
 
-/* 뉴스 툴바 (새로고침/정렬) */
-.news-toolbar [data-testid="stHorizontalBlock"]{{gap:6px!important}}
-.news-toolbar .stButton button{{
-    background:#EBF4FF!important;border:1.5px solid #BEE3F8!important;color:#0D3B8E!important;
-    border-radius:8px!important;font-size:.74rem!important;font-weight:700!important;
-    height:34px!important;padding:0 10px!important;white-space:nowrap!important;
+/* 뉴스 툴바 (새로고침/정렬) - 작고 톤앤매너에 맞게 */
+[class*="st-key-news_refresh_btn"] button,
+[class*="st-key-press_refresh_btn"] button {{
+    background:#EBF4FF!important;border:1px solid #BEE3F8!important;color:#0D3B8E!important;
+    border-radius:6px!important;font-size:.7rem!important;font-weight:700!important;
+    height:30px!important;min-height:30px!important;padding:0 10px!important;
+    width:auto!important;min-width:0!important;
 }}
-.news-toolbar .stButton button:hover{{background:#0D3B8E!important;color:white!important;border-color:#0D3B8E!important}}
-.news-toolbar .stSelectbox div[data-baseweb="select"]{{
-    border-radius:8px!important;border:1.5px solid #BEE3F8!important;background:#EBF4FF!important;
-    min-height:34px!important;
+[class*="st-key-news_refresh_btn"] button:hover,
+[class*="st-key-press_refresh_btn"] button:hover {{
+    background:#0D3B8E!important;color:#fff!important;border-color:#0D3B8E!important;
 }}
-.news-toolbar .stSelectbox div[data-baseweb="select"] *{{color:#0D3B8E!important;font-size:.74rem!important;font-weight:700!important}}
+[class*="st-key-news_sort_sel"] div[data-baseweb="select"]>div,
+[class*="st-key-press_sort_sel"] div[data-baseweb="select"]>div {{
+    background:#EBF4FF!important;border:1px solid #BEE3F8!important;border-radius:6px!important;
+    min-height:30px!important;height:30px!important;
+}}
+[class*="st-key-news_sort_sel"] div[data-baseweb="select"] *,
+[class*="st-key-press_sort_sel"] div[data-baseweb="select"] * {{
+    color:#0D3B8E!important;font-size:.7rem!important;font-weight:700!important;
+}}
+[class*="st-key-news_refresh_btn"],[class*="st-key-press_refresh_btn"],
+[class*="st-key-news_sort_sel"],[class*="st-key-press_sort_sel"] {{
+    margin-top:0!important;margin-bottom:4px!important;
+}}
 .cp-table{{width:100%;border-collapse:collapse;font-size:13px}}
 .cp-table th{{background:#EDF2F7;color:#4A5568;font-weight:700;padding:9px 10px;text-align:center;font-size:11px;border:1px solid #E2E8F0}}
 .cp-table td{{padding:8px 10px;border:1px solid #E2E8F0;color:#2D3748;text-align:center;vertical-align:middle}}
@@ -447,32 +459,6 @@ for col,lbl,val,unit,sub,cls,color,pct in [
 # ══════════════════════════════════════════════════════════════
 st.markdown('<span class="sec-anchor" id="sec-news"></span><div class="sec-title">📰 일일 뉴스 · 보도자료</div>', unsafe_allow_html=True)
 
-st.markdown('<div class="news-toolbar">', unsafe_allow_html=True)
-tb1, tb2 = st.columns(2)
-with tb1:
-    rtcol, stcol = st.columns([1,1.3])
-    with rtcol:
-        if st.button("🔄 지금 갱신", key="news_refresh_btn", use_container_width=True):
-            st.session_state.news_refresh += 1
-            st.rerun()
-    with stcol:
-        st.session_state.news_sort = st.selectbox(
-            "정렬", ["관련도순","최신순"],
-            index=["관련도순","최신순"].index(st.session_state.news_sort),
-            key="news_sort_sel", label_visibility="collapsed")
-with tb2:
-    rtcol2, stcol2 = st.columns([1,1.3])
-    with rtcol2:
-        if st.button("🔄 지금 갱신", key="press_refresh_btn", use_container_width=True):
-            st.session_state.press_refresh += 1
-            st.rerun()
-    with stcol2:
-        st.session_state.press_sort = st.selectbox(
-            "정렬", ["관련도순","최신순"],
-            index=["관련도순","최신순"].index(st.session_state.press_sort),
-            key="press_sort_sel", label_visibility="collapsed")
-st.markdown('</div>', unsafe_allow_html=True)
-
 with st.spinner("뉴스 로딩 중..."):
     news_list, news_ts   = fetch_news(news_kw, NEWS_CACHE_KEY, st.session_state.news_refresh)
     press_list, press_ts = fetch_press(press_kw, NEWS_CACHE_KEY, st.session_state.press_refresh)
@@ -484,9 +470,29 @@ if st.session_state.press_sort == "최신순":
 
 nc1,nc2 = st.columns(2)
 with nc1:
+    _, b1, s1 = st.columns([2.6,1,1.1])
+    with b1:
+        if st.button("🔄 갱신", key="news_refresh_btn", use_container_width=True):
+            st.session_state.news_refresh += 1
+            st.rerun()
+    with s1:
+        st.session_state.news_sort = st.selectbox(
+            "정렬", ["관련도순","최신순"],
+            index=["관련도순","최신순"].index(st.session_state.news_sort),
+            key="news_sort_sel", label_visibility="collapsed")
     rows = "".join([f'<div class="news-row"><span class="news-n">{i+1}</span><div><a href="{n["link"]}" target="_blank" class="news-t">{n["title"]}</a><div class="news-src">{n.get("source","")} {("· "+n["date"]) if n.get("date") else ""}</div></div></div>' for i,n in enumerate(news_list)]) if news_list else '<div class="no-data">⚠️ 뉴스를 불러오지 못했어요.</div>'
     st.markdown(f'<div class="card"><div class="card-head">📰 일일 NEWS <span style="margin-left:auto;font-size:.7rem;color:#A0AEC0;font-weight:400">법령/가맹사업</span></div><span class="badge">🕷️ Google News · {news_ts or "미수집"} · {st.session_state.news_sort}</span>{rows}</div>', unsafe_allow_html=True)
 with nc2:
+    _, b2, s2 = st.columns([2.6,1,1.1])
+    with b2:
+        if st.button("🔄 갱신", key="press_refresh_btn", use_container_width=True):
+            st.session_state.press_refresh += 1
+            st.rerun()
+    with s2:
+        st.session_state.press_sort = st.selectbox(
+            "정렬", ["관련도순","최신순"],
+            index=["관련도순","최신순"].index(st.session_state.press_sort),
+            key="press_sort_sel", label_visibility="collapsed")
     pr = "".join([f'<div class="press"><div class="press-d">{p.get("date","")} · {p.get("source","")}</div><a href="{p.get("link","#")}" target="_blank" class="press-t">{p.get("title","")}</a></div>' for p in press_list[:5]]) if press_list else '<div class="no-data">⚠️ 보도자료를 불러오지 못했어요.</div>'
     st.markdown(f'<div class="card"><div class="card-head">📋 공정위/식약처 보도자료 <span style="margin-left:auto;font-size:.7rem;color:#A0AEC0;font-weight:400">업데이트</span></div><span class="badge">🕷️ Google News · {press_ts or "미수집"} · {st.session_state.press_sort}</span><div style="margin-top:8px">{pr}</div></div>', unsafe_allow_html=True)
 

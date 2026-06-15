@@ -60,6 +60,7 @@ section[data-testid="stMain"]>div{padding:0!important}
 .ci-title{font-size:.83rem;font-weight:600;color:#0B2461;line-height:1.45}
 .ci-desc{font-size:.77rem;color:#4A6899;margin-top:2px;line-height:1.4}
 .card-source{margin-top:9px;padding-top:7px;border-top:1px solid #D4E3F7;font-size:.73rem;color:#0D3188;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.source-web{color:#0369A1;background:#E0F2FE;border:1px solid #BAE6FD;border-radius:5px;padding:1px 7px;font-size:.68rem;font-weight:700}
 .attach-link{background:#EBF4FF;border:1px solid #BEE3F8;color:#0D3B8E;border-radius:6px;padding:3px 10px;font-size:.71rem;font-weight:700;text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
 .attach-link:hover{background:#0D3B8E;color:#fff;border-color:#0D3B8E}
 .card-disclaimer{margin-top:8px;padding:7px 10px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;font-size:.71rem;color:#9A3412;font-weight:600;display:flex;align-items:center;gap:6px}
@@ -300,21 +301,8 @@ def get_folder_files():
         return []
 
 def get_relevant_chunks(query, top_k=20):
-    """RAG: 약어 확장 + n-gram 키워드 매칭"""
-    if not MANUAL_CHUNKS:
-        return []
-    # 약어 확장
-    expanded = query
-    for abbr, full in ABBR_MAP.items():
-        if abbr in query:
-            expanded += " " + full
-    clean_q = expanded.replace(" ", "")
-    ngrams = {clean_q[i:i+n] for n in [1,2,3,4] for i in range(len(clean_q)-n+1)}
-    scored = sorted(((sum(1 for ng in ngrams if ng in c), c) for c in MANUAL_CHUNKS), reverse=True)
-    result = [c for s,c in scored[:top_k] if s > 0]
-    if len(result) < 3:
-        result = [c for _,c in scored[:25]]
-    return result
+    chunks, _ = get_relevant_chunks_with_score(query, top_k)
+    return chunks
 
 # ══════════════════════════════════════════════════════════════
 #  세션 초기화
@@ -332,36 +320,74 @@ NOW_STR = datetime.datetime.now().strftime("%H:%M")
 # ══════════════════════════════════════════════════════════════
 #  AI 호출
 # ══════════════════════════════════════════════════════════════
+def get_relevant_chunks_with_score(query, top_k=20):
+    """RAG 검색 + 최고 점수 반환"""
+    if not MANUAL_CHUNKS:
+        return [], 0
+    expanded = query
+    for abbr, full in ABBR_MAP.items():
+        if abbr in query:
+            expanded += " " + full
+    clean_q = expanded.replace(" ", "")
+    ngrams = {clean_q[i:i+n] for n in [1,2,3,4] for i in range(len(clean_q)-n+1)}
+    scored = sorted(((sum(1 for ng in ngrams if ng in c), c) for c in MANUAL_CHUNKS), reverse=True)
+    best_score = scored[0][0] if scored else 0
+    result = [c for s,c in scored[:top_k] if s > 0]
+    if len(result) < 3:
+        result = [c for _,c in scored[:25]]
+    return result, best_score
+
 def ask_chatbot(question):
-    context = "\n\n---\n".join(get_relevant_chunks(question))
+    chunks, best_score = get_relevant_chunks_with_score(question)
     hist = "".join(f"{'사용자' if h['role']=='user' else '도우미'}: {h['content']}\n"
                    for h in st.session_state.history[-6:])
-    prompt = (
-        "당신은 파리바게뜨 컴플라이언스 전문 도우미입니다.\n"
-        "아래 자료를 읽고 질문과 관련된 내용을 찾아 답변하세요.\n"
-        "자료에 없으면 '담당 부서에 문의해 주세요'로 안내하세요.\n"
-        "각 자료 앞에는 【문서제목】이 표시되어 있습니다. source 필드에는 답변에 사용한 문서의 제목만 쓰세요. 페이지 번호는 쓰지 마세요.\n"
-        "★ 응답: 반드시 JSON만 출력 (다른 텍스트 금지)\n"
-        '{"summary":"한줄요약","items":[{"icon":"이모지","title":"항목","desc":"설명(선택)"}],"source":"문서제목 또는 null"}\n\n'
-        f"[관련 자료]\n{context}\n\n[이전 대화]\n{hist}\n\n[질문]\n{question}"
-    )
-    payload = {"contents":[{"parts":[{"text":prompt}]}]}
-    # ── 진단 모드: 구글 원본 오류를 그대로 화면에 표시 ──
+
+    # ── 매뉴얼에 관련 내용이 충분한지 판단 ──
+    # 최고 점수가 낮고 유의미 청크가 적으면 웹 검색 모드
+    USE_WEB = best_score < 4 or len([c for c in chunks if c]) < 3
+    context = "\n\n---\n".join(chunks)
+
+    if USE_WEB:
+        # ── 웹 검색 모드: Gemini 내장 Google Search 활용 ──
+        prompt = (
+            "당신은 파리바게뜨 컴플라이언스 전문 도우미입니다.\n"
+            "내부 매뉴얼에서 관련 정보를 찾지 못했습니다. "
+            "Google 검색을 통해 공정거래법, 가맹사업법, 컴플라이언스 관련 최신 정보를 찾아 답변하세요.\n"
+            "반드시 신뢰할 수 있는 공식 출처(법제처, 공정거래위원회 등)를 우선 참고하세요.\n"
+            "★ 응답: 반드시 JSON만 출력 (다른 텍스트 금지)\n"
+            '{"summary":"한줄요약","items":[{"icon":"이모지","title":"항목","desc":"설명"}],"source":"🌐 외부 검색"}\n\n'
+            f"[이전 대화]\n{hist}\n\n[질문]\n{question}"
+        )
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "tools": [{"google_search": {}}],
+        }
+    else:
+        # ── 매뉴얼 모드: 내부 자료 기반 답변 ──
+        prompt = (
+            "당신은 파리바게뜨 컴플라이언스 전문 도우미입니다.\n"
+            "아래 자료를 읽고 질문과 관련된 내용을 찾아 답변하세요.\n"
+            "자료에 없으면 '담당 부서에 문의해 주세요'로 안내하세요.\n"
+            "각 자료 앞에는 【문서제목】이 표시되어 있습니다. source 필드에는 답변에 사용한 문서의 제목만 쓰세요. 페이지 번호는 쓰지 마세요.\n"
+            "★ 응답: 반드시 JSON만 출력 (다른 텍스트 금지)\n"
+            '{"summary":"한줄요약","items":[{"icon":"이모지","title":"항목","desc":"설명(선택)"}],"source":"문서제목 또는 null"}\n\n'
+            f"[관련 자료]\n{context}\n\n[이전 대화]\n{hist}\n\n[질문]\n{question}"
+        )
+        payload = {"contents": [{"parts": [{"text": prompt}]}]}
+
+    # ── 공통 API 호출 ──
     try:
         r = requests.post(GEMINI_URL,
             headers={"Content-Type":"application/json; charset=utf-8"},
             data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
             timeout=90)
-        # 정상 응답
         res = r.json()
         if "candidates" in res:
             return res["candidates"][0]["content"]["parts"][0]["text"]
-        # 오류 응답 — 원본 그대로 노출
         err  = res.get("error", {})
         code = err.get("code", "코드없음")
         stat = err.get("status", "")
         msg  = err.get("message", "메시지없음")
-        # API 키 앞 6자리만 표시(키 자체는 가림)
         key_preview = (API_KEY[:6] + "..." + API_KEY[-4:]) if API_KEY else "(비어있음)"
         return json.dumps({
             "summary": f"🔧 [진단] HTTP {r.status_code} / code {code} {stat}",
@@ -398,8 +424,14 @@ def parse_response(raw, attachment=False):
             icon,title,desc = item.get("icon","▪"),item.get("title",""),item.get("desc","")
             html += f'<div class="card-item"><span class="ci-icon">{icon}</span><div><div class="ci-title">{title}</div>{"<div class=\"ci-desc\">"+desc+"</div>" if desc else ""}</div></div>'
         if data.get("source") or attach_html:
-            src_text = f'📄 출처: {data["source"]}' if data.get("source") else ""
-            html += f'<div class="card-source"><span>{src_text}</span>{attach_html}</div>'
+            src = data.get("source","")
+            if src and "외부 검색" in src:
+                src_html = '<span class="source-web">🌐 외부 검색 (Google)</span>'
+            elif src:
+                src_html = f'📄 출처: {src}'
+            else:
+                src_html = ""
+            html += f'<div class="card-source"><span>{src_html}</span>{attach_html}</div>'
         html += DISCLAIMER
         return html
     except Exception:

@@ -332,7 +332,8 @@ div[data-testid="stForm"]{
 API_KEY   = st.secrets.get("GEMINI_API_KEY", "")
 LOGIN_PW  = st.secrets.get("LOGIN_PASSWORD",  "1111")
 ADMIN_PW  = st.secrets.get("ADMIN_PASSWORD",  "pbadmin2024")
-GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
+GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]  # 앞 모델이 계속 혼잡하면 다음 모델로
+RETRY_CODES   = {429, 500, 503, 504}
 
 QUICK_QUESTIONS = [
     ("🏢", "가맹금이란?",              "가맹금이 무엇인지 알려줘"),
@@ -530,15 +531,28 @@ def ask_chatbot(question):
         )
         payload = {"contents": [{"parts": [{"text": prompt}]}]}
 
-    # ── 공통 API 호출 ──
+    # ── 공통 API 호출 (서버 혼잡 시 재시도 → 대체 모델) ──
     try:
-        r = requests.post(GEMINI_URL,
-            headers={"Content-Type":"application/json; charset=utf-8"},
-            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-            timeout=90)
-        res = r.json()
+        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        for model in GEMINI_MODELS:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={API_KEY}"
+            for attempt in range(3):
+                r = requests.post(url,
+                    headers={"Content-Type":"application/json; charset=utf-8"},
+                    data=body, timeout=90)
+                res = r.json()
+                if "candidates" in res or r.status_code not in RETRY_CODES:
+                    break
+                time.sleep(2 ** attempt)  # 1초, 2초, 4초
+            if "candidates" in res or r.status_code not in RETRY_CODES:
+                break
         if "candidates" in res:
             return res["candidates"][0]["content"]["parts"][0]["text"]
+        if r.status_code in RETRY_CODES:
+            return json.dumps({
+                "summary": "⏳ 지금 AI 서버 사용량이 많아 답변하지 못했습니다. 잠시 후 다시 질문해 주세요.",
+                "items": [], "source": None
+            }, ensure_ascii=False)
         err  = res.get("error", {})
         code = err.get("code", "코드없음")
         stat = err.get("status", "")

@@ -551,12 +551,15 @@ def ask_chatbot(question):
                 break
         if "candidates" in res:
             return res["candidates"][0]["content"]["parts"][0]["text"]
+        err  = res.get("error", {})
         if r.status_code in RETRY_CODES:
+            # 429=할당량 초과, 5xx=구글 서버 혼잡 → 원인 구분용으로 코드·원본 메시지 표시
             return json.dumps({
                 "summary": "⏳ 지금 AI 서버 사용량이 많아 답변하지 못했습니다. 잠시 후 다시 질문해 주세요.",
-                "items": [], "source": None
+                "items": [{"icon":"🔧","title":f"HTTP {r.status_code} {err.get('status','')}",
+                           "desc":str(err.get("message","메시지없음"))[:400]}],
+                "source": None
             }, ensure_ascii=False)
-        err  = res.get("error", {})
         code = err.get("code", "코드없음")
         stat = err.get("status", "")
         msg  = err.get("message", "메시지없음")

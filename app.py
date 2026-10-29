@@ -332,7 +332,7 @@ div[data-testid="stForm"]{
 API_KEY   = st.secrets.get("GEMINI_API_KEY", "")
 LOGIN_PW  = st.secrets.get("LOGIN_PASSWORD",  "1111")
 ADMIN_PW  = st.secrets.get("ADMIN_PASSWORD",  "pbadmin2024")
-GEMINI_MODELS = ["gemini-3.8-flash"]
+GEMINI_MODELS = ["gemini-3.8-flash"]  # 2.5 계열은 새 키로 못 씀(404). 혼잡 대비 모델은 확인되면 뒤에 추가
 RETRY_CODES   = {429, 500, 503, 504}
 
 QUICK_QUESTIONS = [
@@ -531,6 +531,9 @@ def ask_chatbot(question):
         )
         payload = {"contents": [{"parts": [{"text": prompt}]}]}
 
+    # 3.x 모델은 기본 생각(thinking)이 길어 90초를 넘김 → FAQ 답변엔 low로 충분
+    payload["generationConfig"] = {"thinkingConfig": {"thinkingLevel": "low"}}
+
     # ── 공통 API 호출 (서버 혼잡 시 재시도 → 대체 모델) ──
     try:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -539,7 +542,7 @@ def ask_chatbot(question):
             for attempt in range(3):
                 r = requests.post(url,
                     headers={"Content-Type":"application/json; charset=utf-8"},
-                    data=body, timeout=90)
+                    data=body, timeout=180)
                 res = r.json()
                 if "candidates" in res or r.status_code not in RETRY_CODES:
                     break
@@ -567,7 +570,7 @@ def ask_chatbot(question):
             "source": None
         }, ensure_ascii=False)
     except requests.exceptions.Timeout:
-        return json.dumps({"summary":"🔧 [진단] 네트워크 타임아웃 (90초 초과)","items":[],"source":None}, ensure_ascii=False)
+        return json.dumps({"summary":"🔧 [진단] 네트워크 타임아웃 (180초 초과)","items":[],"source":None}, ensure_ascii=False)
     except Exception as e:
         return json.dumps({"summary":"🔧 [진단] 예외 발생","items":[{"icon":"⚠️","title":"오류 종류","desc":f"{type(e).__name__}: {str(e)[:300]}"}],"source":None}, ensure_ascii=False)
 

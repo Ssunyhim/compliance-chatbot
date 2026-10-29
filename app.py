@@ -332,7 +332,7 @@ div[data-testid="stForm"]{
 API_KEY   = st.secrets.get("GEMINI_API_KEY", "")
 LOGIN_PW  = st.secrets.get("LOGIN_PASSWORD",  "1111")
 ADMIN_PW  = st.secrets.get("ADMIN_PASSWORD",  "pbadmin2024")
-GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]  # 앞 모델이 계속 혼잡하면 다음 모델로
+GEMINI_MODELS = ["gemini-3.8-flash"]
 RETRY_CODES   = {429, 500, 503, 504}
 
 QUICK_QUESTIONS = [
